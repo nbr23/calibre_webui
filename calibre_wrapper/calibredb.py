@@ -75,6 +75,21 @@ class CalibreDBW:
                     'count': con.execute(stm).first()[0]})
         return tags_list
 
+    def list_series(self):
+        series_list = []
+        meta = MetaData(self.db_ng)
+        series = Table('series', meta, autoload=True)
+        books_series_link = Table('books_series_link', meta, autoload=True)
+
+        with self.db_ng.connect() as con:
+            stm = select([series]).order_by(series.c.name)
+            for serie in con.execute(stm).fetchall():
+                stm = select([books_series_link])\
+                        .where(books_series_link.c.series == serie.id).count()
+                series_list.append({'name': serie.name,
+                    'count': con.execute(stm).first()[0]})
+        return series_list
+
     def list_authors(self):
         authors_list = []
         meta = MetaData(self.db_ng)
