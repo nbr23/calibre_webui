@@ -29,19 +29,97 @@ class CalibreDBW:
         return subprocess.call(['calibredb', 'remove', '--permanent',
             '--library-path', self._calibre_lib_dir, str(book_id)])
 
-    def list_books(self, search=None):
+    def search_books_tags(self, search):
         with self.db_ng.connect() as con:
             meta = MetaData(self.db_ng)
             books = Table('books', meta, autoload=True)
             books_authors_link = Table('books_authors_link',
                     meta, autoload=True)
             authors = Table('authors', meta, autoload=True)
-            stm = None
-            if search:
+            books_tags_link = Table('books_tags_link',
+                    meta, autoload=True)
+            tags = Table('tags', meta, autoload=True)
 
-                stm = select([books.c.title,
-                    books.c.id,
-                    authors.c.name.label('author')])\
+            stm = select([books.c.title,
+                books.c.id,
+                authors.c.name.label('author')])\
+                        .select_from(books.join(books_authors_link,
+                            books_authors_link.c.book == books.c.id)\
+                        .join(authors,
+                            books_authors_link.c.author == authors.c.id)\
+                        .join(books_tags_link,
+                            books_tags_link.c.book == books.c.id)\
+                        .join(tags,
+                            books_tags_link.c.tag == tags.c.id))\
+                        .where(tags.c.name.ilike('%%%s%%' % search))\
+                        .order_by(books.c.last_modified.desc())
+            return con.execute(stm).fetchall()
+
+    def search_books_series(self, search):
+        with self.db_ng.connect() as con:
+            meta = MetaData(self.db_ng)
+            books = Table('books', meta, autoload=True)
+            books_authors_link = Table('books_authors_link',
+                    meta, autoload=True)
+            authors = Table('authors', meta, autoload=True)
+            books_series_link = Table('books_series_link',
+                    meta, autoload=True)
+            series = Table('series', meta, autoload=True)
+
+            stm = select([books.c.title,
+                books.c.id,
+                authors.c.name.label('author')])\
+                        .select_from(books.join(books_authors_link,
+                            books_authors_link.c.book == books.c.id)\
+                        .join(authors,
+                            books_authors_link.c.author == authors.c.id)\
+                        .join(books_series_link,
+                            books_series_link.c.book == books.c.id)\
+                        .join(series,
+                            books_series_link.c.series == series.c.id))\
+                        .where(series.c.name.ilike('%%%s%%' % search))\
+                        .order_by(books.c.last_modified.desc())
+            return con.execute(stm).fetchall()
+
+    def search_books_authors(self, search):
+        with self.db_ng.connect() as con:
+            meta = MetaData(self.db_ng)
+            books = Table('books', meta, autoload=True)
+            books_authors_link = Table('books_authors_link',
+                    meta, autoload=True)
+            authors = Table('authors', meta, autoload=True)
+
+            stm = select([books.c.title,
+                books.c.id,
+                authors.c.name.label('author')])\
+                        .select_from(books.join(books_authors_link,
+                            books_authors_link.c.book == books.c.id)\
+                        .join(authors,
+                            books_authors_link.c.author == authors.c.id))\
+                        .where(authors.c.name.ilike('%%%s%%' % search))\
+                        .order_by(books.c.last_modified.desc())
+            return con.execute(stm).fetchall()
+
+    def search_books(self, search, attribute):
+        if attribute and attribute in ['authors', 'series', 'tags'] and search:
+            if attribute == 'authors':
+                return self.search_books_authors(search)
+            elif attribute == 'series':
+                return self.search_books_series(search)
+            elif attribute == 'tags':
+                return self.search_books_tags(search)
+        else:
+            with self.db_ng.connect() as con:
+                meta = MetaData(self.db_ng)
+                books = Table('books', meta, autoload=True)
+                books_authors_link = Table('books_authors_link',
+                        meta, autoload=True)
+                authors = Table('authors', meta, autoload=True)
+                stm = None
+                if search:
+                    stm = select([books.c.title,
+                        books.c.id,
+                        authors.c.name.label('author')])\
                             .select_from(books.join(books_authors_link,
                                 books_authors_link.c.book == books.c.id)\
                             .join(authors,
@@ -49,16 +127,16 @@ class CalibreDBW:
                             .where(books.c.title.ilike('%%%s%%' % search) |
                                     authors.c.name.ilike('%%%s%%' % search))\
                             .order_by(books.c.last_modified.desc())
-            else:
-                stm = select([books.c.title,
-                    books.c.id,
-                    authors.c.name.label('author')])\
+                else:
+                    stm = select([books.c.title,
+                        books.c.id,
+                        authors.c.name.label('author')])\
                             .select_from(books.join(books_authors_link,
                                 books_authors_link.c.book == books.c.id)\
                             .join(authors,
                                 books_authors_link.c.author == authors.c.id))\
                             .order_by(books.c.last_modified.desc())
-            return con.execute(stm).fetchall()
+                return con.execute(stm).fetchall()
 
     def list_tags(self):
         tags_list = []
