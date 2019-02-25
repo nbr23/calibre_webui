@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block page_title %}
+{{title}}
+{% endblock %}
+
+{% block body %}
+<div class="row justify-content-md-center">
+  <div class="col-6">
+    <h2>{{title}}</h2><br/>
+    <table class="table table-hover">
+      <tbody id='taskslist'>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block javascript %}
+  <script type="text/javascript">
+    var fetch_tasks = function() {$.getJSON('{{url_for("get_tasks_list")}}', function (data) {
+      tasks = '';
+      status_list = {'COMPLETED': 'success', 'RUNNING': 'info', 'CANCELED': 'danger'};
+      for (i = 0; i < data.length; i++)
+      {
+        tasks += '<tr><td><span class="badge badge-' + status_list[data[i].status] + '">' + data[i].status + '</span></td><td>' + data[i].message + '</td></tr>';
+      }
+      $("#taskslist").html(tasks);
+      });
+    };
+    fetch_tasks();
+    window.setInterval(fetch_tasks, 5000);
+
+  </script>
+{% endblock %}
