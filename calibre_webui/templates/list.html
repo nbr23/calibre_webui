@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+{{title}}
+{% endblock %}
+
+{% block body %}
+<div class="row justify-content-md-center">
+  <div class="col-6">
+    <h2>{{title}}</h2><br/>
+    <table class="table table-hover">
+      <tbody>
+        {% for item in itemlist %}
+        <tr>
+          <td><span class="badge badge-info badge-pill">{{item.count}}</span></td>
+          <td><a href="{{ url_for('index', search=item.name, search_scope=scope)}}">{{item.name}}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
