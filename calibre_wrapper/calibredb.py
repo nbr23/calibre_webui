@@ -25,9 +25,12 @@ class CalibreDBW:
             '--library-path', self._calibre_lib_dir, str(book_id), file_path])
 
     def remove_format(self, book_id, book_format):
-        return subprocess.call(['calibredb', 'remove_format',
+        success = subprocess.call(['calibredb', 'remove_format',
             '--library-path', self._calibre_lib_dir, str(book_id),
             book_format])
+        if success == 0 and len(self.get_book_formats(book_id)) < 1:
+            return self.remove_book(book_id)
+        return success
 
     def remove_book(self, book_id):
         return subprocess.call(['calibredb', 'remove', '--permanent',
