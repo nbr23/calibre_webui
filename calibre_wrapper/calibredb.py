@@ -85,7 +85,10 @@ class CalibreDBW:
             format_to.lower()))
         fullpath = os.path.join(fpath, fname)
         if subprocess.call(['ebook-convert', fullpath, tmp_file]) == 0:
-            self.add_format(book_id, tmp_file)
+            if self.get_book(book_id) == None:
+                self.add_book(tmp_file)
+            else:
+                self.add_format(book_id, tmp_file)
             os.remove(tmp_file)
             self.update_task_status(task_id, 'COMPLETED')
         else:
