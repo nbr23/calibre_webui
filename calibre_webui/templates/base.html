@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Calibre | {% block page_title %}{%endblock%}</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap.min.css') }}">
+
+<style>
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100; /* Behind the navbar */
+  padding: 100px 0 0; /* Height of navbar */
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.cover {
+  box-shadow: 7px 7px 20px grey;
+  height:250px;
+}
+</style>
+
+   {% block header %}{% endblock %}
+  </head>
+  <body>
+    <header>
+      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <a class="navbar-brand" href="/">Calibre</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{{url_for('index')}}">Books</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{url_for('list_authors')}}">Authors</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{url_for('list_tags')}}">Tags</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{url_for('list_series')}}">Series</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{url_for('list_tasks')}}">Tasks
+                <span id='tasks_running' class="badge badge-info"></span>
+                <span id='tasks_completed' class="badge badge-success"></span>
+                <span id='tasks_canceled' class="badge badge-danger"></span>
+              </a>
+            </li>
+          </ul>
+          <form class="form-inline mr-4" method="GET" action="{{ url_for('index') }}">
+            <div class="input-group">
+              <input style="width: 300px" class="form-control mr-sm-0" type="text" name="search" placeholder="Search" aria-label="Search" value="{% if search != None %}{{search}}{%endif%}">
+              <select style="width: 120px" class="input-group-append form-control mr-sm-2" name="search_scope">
+                <option {% if scope|lower == "books" %}selected{% endif %}>Books</option>
+                <option {% if scope|lower == "authors" %}selected{% endif %}>Authors</option>
+                <option {% if scope|lower == "tags" %}selected{% endif %}>Tags</option>
+                <option {% if scope|lower == "series" %}selected{% endif %}>Series</option>
+              </select>
+              <button class="btn btn-outline-success" type="submit">Search</button>
+            </div>
+          </form>
+          <form id="navbar-upload" class="form-inline mr-0" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+            <label class="btn file btn-primary">
+              Upload<input type="file" id="books_upload" name="books_upload" hidden multiple>
+            </label>
+          </form>
+        </div>
+      </nav>
+    </header>
+    <div class="container-fluid" style="padding:  100px 15px 0;">
+      <div class="row-fluid">
+        <main role="main" class="col-md-auto ml-sm-auto col-lg-auto">
+          {% with flash_msg = get_flashed_messages(with_categories=true) %}
+          {% if flash_msg %}
+            {% for category, message in flash_msg %}
+            <div class="alert alert-{{category}}">
+              {{message}}
+            </div>
+            {% endfor %}
+          {% endif %}
+          {% endwith %}
+          {% block body %}{% endblock %}
+        </main>
+      </div>
+    </div>
+
+
+    <script src="{{ url_for('static', filename='jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+  <script type="text/javascript">
+    $(function () {
+      $("#books_upload").change(function () {
+        $("#navbar-upload").submit();
+      });
+    });
+    var fetch_task_count = function() {$.getJSON('{{url_for("get_tasks_count")}}', function (data) {
+      if (data.COMPLETED != 0) {$("#tasks_completed").html(data.COMPLETED);}
+      else{$("#tasks_completed").empty()}
+      if (data.CANCELED != 0) {$("#tasks_canceled").html(data.CANCELED);}
+      else{$("#tasks_canceled").empty()}
+      if (data.RUNNING != 0) {$("#tasks_running").html(data.RUNNING);}
+      else{$("#tasks_running").empty()}
+      });
+    };
+    fetch_task_count();
+    window.setInterval(fetch_task_count, 5000);
+  </script>
+    {% block javascript %}{% endblock %}
+  </body>
+</html>
