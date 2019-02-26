@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+{{book.title}}
+{% endblock %}
+
+{% block body %}
+<div class="row">
+  <div class="col-3">
+    <img class="mx-auto d-block" style="width: 100%;" src="/cover/{{book.id}}"/><br/>
+    <p><a type="button" class="btn btn-danger" href="{{url_for('delete_book', book_id=book.id)}}">Delete book</a></p>
+    Available formats:
+    <ul>
+      {% for format in formats.formats_sizes %}
+      <li><a href="{{url_for("download_book_file", book_id=book.id, book_format=format.format)}}">{{format.format}} - {{format.size}} MB</a> <a type="button" class="btn btn-danger" href="{{url_for('delete_book_format', book_id=book.id, book_format=format.format)}}">Delete</a></li>
+      {% endfor%}
+    </ul>
+    <form id="format-upload" class="form-inline mr-0" action="{{ url_for('add_format', book_id=book.id) }}" method="post" enctype="multipart/form-data">
+      <label class="btn file btn-primary">
+        Upload format<input type="file" id="format_upload" name="format_upload" hidden multiple>
+      </label>
+    </form>
+
+
+  </div>
+  <div class="col-5">
+    <form>
+      <div class="form-group">
+        <label for="book_title">Book title</label>
+        <input type="text" class="form-control" id="book_title" value="{{book.title}}">
+      </div>
+      <div class="form-group">
+        <label for="book_author">Author</label>
+        <input type="text" class="form-control" id="book_author" value="{{book.author}}">
+      </div>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+    {% if formats.formats_list|length > 0 %}
+    Convert:
+    <form action="{{url_for('convert_book', book_id=book.id)}}" method="POST">
+      <div class="form-group">
+        Convert from:
+        <select class="form-control" name="format_from">
+          {% for format in formats.formats_sizes %}
+          <option>{{format.format | upper}}</option>
+          {% endfor %}
+        </select>
+        To:
+        <select class="form-control" name="format_to">
+          {% for format in formats_to %}
+          {% if format not in formats.formats_list %}
+          <option {% if format|upper == preferred|upper %}selected{% endif %}>{{format | upper}}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Convert</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script type="text/javascript">
+  $(function () {
+    $("#format_upload").change(function () {
+      $("#format-upload").submit();
+    });
+  });
+</script>
+{% endblock %}
