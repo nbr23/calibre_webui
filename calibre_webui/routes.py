@@ -35,6 +35,19 @@ def index():
     return render_template('index.html', books=books, search=search,
             scope=scope, title='My Books')
 
+@app.route('/api/books')
+def get_books():
+    page = int(request.args.get('page')) if 'page' in request.args else 1
+    search = request.args.get("search").strip() \
+            if 'search' in request.args else None
+    scope = request.args.get('search_scope').strip() \
+            if 'search_scope' in request.args else None
+    books = app.calibredb_wrap.search_books(search.lower() if search else None,
+            scope.lower() if scope else None,
+            page=page)
+    dic = app.calibredb_wrap.resultproxy_to_dict(books)
+    return jsonify(dic)
+
 @app.route('/tasks')
 def list_tasks():
     tasks = app.calibredb_wrap.list_tasks()
