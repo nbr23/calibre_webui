@@ -178,7 +178,8 @@ class CalibreDBW:
                         .order_by(books.c.last_modified.desc())
             return con.execute(stm).fetchall()
 
-    def search_books(self, search, attribute):
+
+    def search_books(self, search, attribute, page=1, limit=30):
         if attribute and attribute in ['authors', 'series', 'tags'] and search:
             if attribute == 'authors':
                 return self.search_books_authors(search)
@@ -194,26 +195,26 @@ class CalibreDBW:
                         meta, autoload=True)
                 authors = Table('authors', meta, autoload=True)
                 stm = None
+                author = select([group_concat(authors.c.name, ';')])\
+                        .select_from(authors.join(books_authors_link,
+                            books_authors_link.c.author == authors.c.id))\
+                            .where(books_authors_link.c.book == books.c.id)\
+                            .label('author')
                 if search:
                     stm = select([books.c.title,
-                        books.c.id,
-                        authors.c.name.label('author')])\
-                            .select_from(books.join(books_authors_link,
-                                books_authors_link.c.book == books.c.id)\
-                            .join(authors,
-                                books_authors_link.c.author == authors.c.id))\
-                            .where(books.c.title.ilike('%%%s%%' % search) |
-                                    authors.c.name.ilike('%%%s%%' % search))\
-                            .order_by(books.c.last_modified.desc())
+                        books.c.id, author])\
+                        .where(books.c.title.ilike('%%%s%%' % search) |
+                                author.ilike('%%%s%%' % search))\
+                        .order_by(books.c.last_modified.desc())\
+                        .limit(limit)\
+                        .offset((page - 1) * limit)
                 else:
                     stm = select([books.c.title,
                         books.c.id,
-                        authors.c.name.label('author')])\
-                            .select_from(books.join(books_authors_link,
-                                books_authors_link.c.book == books.c.id)\
-                            .join(authors,
-                                books_authors_link.c.author == authors.c.id))\
-                            .order_by(books.c.last_modified.desc())
+                        author])\
+                        .order_by(books.c.last_modified.desc())\
+                        .limit(limit)\
+                        .offset((page - 1) * limit)
                 return con.execute(stm).fetchall()
 
     def list_tags(self):
