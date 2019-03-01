@@ -1,10 +1,22 @@
 import subprocess
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, expression
+from sqlalchemy.ext.compiler import compiles
 from threading import Thread
 import os
 import uuid
+
+class group_concat(expression.FunctionElement):
+    name = "group_concat"
+
+@compiles(group_concat, 'sqlite')
+def group_concat_sqlite(element, compiler, **kw):
+    compiled = tuple(map(compiler.process, element.clauses))
+    if len(compiled) == 2:
+        return 'GROUP_CONCAT(%s, %s)' % compiled
+    elif len(compiled) == 1:
+        return 'GROUP_CONCAT(%s)' % compiled
 
 class CalibreDBW:
     def __init__(self, config, redis_db):
@@ -54,6 +66,7 @@ class CalibreDBW:
             'COMPLETED':
                 sum(t['status'] == 'COMPLETED' for t in tasks),
             }
+
     def create_redis_task(self, message, status):
         task_id = uuid.uuid4().hex
         task = {
