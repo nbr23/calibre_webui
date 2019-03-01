@@ -217,6 +217,12 @@ class CalibreDBW:
                         .offset((page - 1) * limit)
                 return con.execute(stm).fetchall()
 
+    def resultproxy_to_dict(self, result):
+        res = []
+        for row in result:
+            res.append({field: row[field] for field in row.keys()})
+        return res
+
     def list_tags(self):
         tags_list = []
         meta = MetaData(self._db_ng)
