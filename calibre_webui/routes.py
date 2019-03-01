@@ -25,20 +25,17 @@ def static(filename):
 
 @app.route('/', methods=['GET'])
 def index():
-    search, scope = None, None
-    if 'search' in request.args:
-        search = request.args.get("search").strip()
-    if 'search_scope' in request.args:
-        scope = request.args.get('search_scope').strip()
-    books = app.calibredb_wrap.search_books(search.lower() if search else None,
-            scope.lower() if scope else None)
-    return render_template('index.html', books=books, search=search,
+    search = request.args.get("search").strip().lower() \
+            if 'search' in request.args else None
+    scope = request.args.get('search_scope').strip() \
+            if 'search_scope' in request.args else None
+    return render_template('index.html', search=search,
             scope=scope, title='My Books')
 
 @app.route('/api/books')
 def get_books():
     page = int(request.args.get('page')) if 'page' in request.args else 1
-    search = request.args.get("search").strip() \
+    search = request.args.get("search").strip().lower() \
             if 'search' in request.args else None
     scope = request.args.get('search_scope').strip() \
             if 'search_scope' in request.args else None
