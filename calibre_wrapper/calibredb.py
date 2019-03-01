@@ -276,14 +276,16 @@ class CalibreDBW:
             books_authors_link = Table('books_authors_link',
                     meta, autoload=True)
             authors = Table('authors', meta, autoload=True)
+
+            author = select([group_concat(authors.c.name, ';')])\
+                    .select_from(authors.join(books_authors_link,
+                        books_authors_link.c.author == authors.c.id))\
+                    .where(books_authors_link.c.book == books.c.id)\
+                    .label('author')
+
             stm = select([books.c.title, books.c.path,
-                books.c.id,
-                authors.c.name.label('author')])\
-                        .select_from(books.join(books_authors_link,
-                            books_authors_link.c.book == books.c.id)\
-                        .join(authors,
-                            books_authors_link.c.author == authors.c.id))\
-                        .where(books.c.id == book_id)
+                        books.c.id, author])\
+                    .where(books.c.id == book_id)
             return con.execute(stm).first()
 
     def get_book_details(self, book_id):
