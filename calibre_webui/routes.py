@@ -96,6 +96,7 @@ def book_edit(book_id):
             book=book,
             formats=book_formats,
             tags=tags,
+            publishers=publishers,
             formats_to=app.config['CALIBRE_EXT_CONV'],
             preferred=app.config['FORMAT_PREFERRED'])
 

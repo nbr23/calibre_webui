@@ -309,13 +309,13 @@ class CalibreDBW:
         return self.get_book_attributes(book_id, 'tags', 'name', 'tag')
 
     def get_book_publishers(self, book_id):
-        self.get_book_attributes(book_id, 'publishers', 'name', 'publisher')
+        return self.get_book_attributes(book_id, 'publishers', 'name', 'publisher')
 
 
     def get_book_details(self, book_id):
         book = self.get_book(book_id)
         tags = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
-        publishers = self.get_book_publishers(book_id)
+        publishers = ', '.join([pub['name'] for pub in self.get_book_publishers(book_id)])
         formats = self.get_book_formats(book_id)
         return (book, formats, tags, publishers)
 
