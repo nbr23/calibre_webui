@@ -288,10 +288,36 @@ class CalibreDBW:
                     .where(books.c.id == book_id)
             return con.execute(stm).first()
 
+    def get_book_attributes(self, book_id, attribute_table_name,
+                            attribute_column_name,
+                            attribute_link_name):
+        with self._db_ng.connect() as con:
+            meta = MetaData(self._db_ng)
+            books_attributes_link = Table('books_%s_link'
+                    % attribute_table_name,
+                    meta, autoload=True)
+            attributes = Table(attribute_table_name, meta, autoload=True)
+
+            stm = select([getattr(attributes.c, attribute_column_name)])\
+                    .select_from( attributes.join(books_attributes_link,
+                        getattr(books_attributes_link.c,
+                            attribute_link_name) == attributes.c.id))\
+                        .where(books_attributes_link.c.book == book_id)
+            return self.resultproxy_to_dict(con.execute(stm).fetchall())
+
+    def get_book_tags(self, book_id):
+        return self.get_book_attributes(book_id, 'tags', 'name', 'tag')
+
+    def get_book_publishers(self, book_id):
+        self.get_book_attributes(book_id, 'publishers', 'name', 'publisher')
+
+
     def get_book_details(self, book_id):
         book = self.get_book(book_id)
+        tags = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
+        publishers = self.get_book_publishers(book_id)
         formats = self.get_book_formats(book_id)
-        return (book, formats)
+        return (book, formats, tags, publishers)
 
     def get_book_formats(self, book_id):
         formats = []
