@@ -21,13 +21,24 @@
         <input type="text" class="form-control col-sm-10" id="book_author" value="{{book.author}}">
       </div>
       <div class="form-group row">
-        <label class="col-form-label col-sm-2" for="book_tags">Tags</label>
-        <input type="text" class="form-control col-sm-10" id="book_tags" value="{{tags}}">
+        <label class="col-form-label col-sm-2" for="book_publishers">Publishers</label>
+        <input type="text" class="form-control col-sm-10" id="book_publishers" value="{{book.publishers}}">
       </div>
       <div class="form-group row">
-        <label class="col-form-label col-sm-2" for="book_publishers">Publishers</label>
-        <input type="text" class="form-control col-sm-10" id="book_publishers" value="{{publishers}}">
+        <label class="col-form-label col-sm-2" for="book_commentss">Comments</label>
+        <textarea class="form-control col-sm-10" rows="5" id="book_comments">{% if book.comments %}{{book.comments}}{% endif %}</textarea>
       </div>
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="book_tags">Tags</label>
+        <input type="text" class="form-control col-sm-10" id="book_tags" value="{{book.tags}}">
+      </div>
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="book_languages">Languages</label>
+        <input type="text" class="form-control col-sm-10" id="book_languages" value="{{book.languages}}">
+      </div>
+
+
+
       <div class="text-center"><button type="submit" class="btn btn-primary">Save</button></div>
     </form>
   </div>

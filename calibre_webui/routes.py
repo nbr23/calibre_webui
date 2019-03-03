@@ -87,7 +87,7 @@ def get_cover(book_id):
 
 @app.route('/book/<int:book_id>/edit', methods=['GET', 'POST'])
 def book_edit(book_id):
-    book, formats, tags, publishers = app.calibredb_wrap.get_book_details(book_id)
+    book, formats = app.calibredb_wrap.get_book_details(book_id)
     if not book:
         return redirect(url_for("index"))
     book_formats = {'formats_sizes': formats,
@@ -95,8 +95,6 @@ def book_edit(book_id):
     return render_template('book_detail.html',
             book=book,
             formats=book_formats,
-            tags=tags,
-            publishers=publishers,
             formats_to=app.config['CALIBRE_EXT_CONV'],
             preferred=app.config['FORMAT_PREFERRED'])
 

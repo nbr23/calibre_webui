@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.engine import RowProxy
 from threading import Thread
 import os
 import uuid
@@ -218,6 +219,8 @@ class CalibreDBW:
                 return con.execute(stm).fetchall()
 
     def resultproxy_to_dict(self, result):
+        if isinstance(result, RowProxy):
+            return {field: result[field] for field in result.keys()}
         res = []
         for row in result:
             res.append({field: row[field] for field in row.keys()})
@@ -276,15 +279,18 @@ class CalibreDBW:
             books_authors_link = Table('books_authors_link',
                     meta, autoload=True)
             authors = Table('authors', meta, autoload=True)
+            comments = Table('comments', meta, autoload=True)
 
             author = select([group_concat(authors.c.name, ';')])\
                     .select_from(authors.join(books_authors_link,
                         books_authors_link.c.author == authors.c.id))\
                     .where(books_authors_link.c.book == books.c.id)\
                     .label('author')
+            comment = select([comments.c.text])\
+                    .where(comments.c.book == book_id).label('comments')
 
             stm = select([books.c.title, books.c.path,
-                        books.c.id, author])\
+                        books.c.id, author, comment])\
                     .where(books.c.id == book_id)
             return con.execute(stm).first()
 
@@ -311,13 +317,22 @@ class CalibreDBW:
     def get_book_publishers(self, book_id):
         return self.get_book_attributes(book_id, 'publishers', 'name', 'publisher')
 
+    def get_book_ratings(self, book_id):
+        return self.get_book_attributes(book_id, 'ratings', 'rating', 'rating')
+
+    def get_book_languages(self, book_id):
+        return self.get_book_attributes(book_id, 'languages', 'lang_code', 'lang_code')
 
     def get_book_details(self, book_id):
-        book = self.get_book(book_id)
-        tags = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
-        publishers = ', '.join([pub['name'] for pub in self.get_book_publishers(book_id)])
+        book = self.resultproxy_to_dict(self.get_book(book_id))
+        book['tags'] = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
+        book['publishers'] = ', '.join([pub['name']
+                for pub in self.get_book_publishers(book_id)])
+        book['languages'] = ', '.join([lang['lang_code']
+                for lang in self.get_book_languages(book_id)])
+        book['rating'] = self.get_book_ratings(book_id)
         formats = self.get_book_formats(book_id)
-        return (book, formats, tags, publishers)
+        return (book, formats)
 
     def get_book_formats(self, book_id):
         formats = []
