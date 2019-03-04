@@ -36,7 +36,10 @@
         <label class="col-form-label col-sm-2" for="book_languages">Languages</label>
         <input type="text" class="form-control col-sm-10" id="book_languages" value="{{book.languages}}">
       </div>
-
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="book_pubdate">Publication</label>
+        <input type="text" class="form-control col-sm-10" id="book_pubdate" value="{{book.pubdate}}">
+      </div>
 
 
       <div class="text-center"><button type="submit" class="btn btn-primary">Save</button></div>
@@ -52,7 +55,7 @@
             <a href="{{url_for("download_book_file", book_id=book.id, book_format=format.format)}}">{{format.format}}</a>
           </td>
           <td>{{format.size}} MB</td>
-          <td><a type="button" class="btn btn-danger" href="{{url_for('delete_book_format', book_id=book.id, book_format=format.format)}}">Delete</a></td>
+          <td><a type="button" class="btn btn-danger btn-sm" href="{{url_for('delete_book_format', book_id=book.id, book_format=format.format)}}">×</a></td>
         </tr>
         {% endfor%}
       </tbody>
