@@ -108,7 +108,7 @@ class CalibreDBW:
         else:
             self.update_task_status(task_id, 'CANCELED')
 
-    def search_books_tags(self, search):
+    def search_books_tags(self, search, page=1, limit=30):
         with self._db_ng.connect() as con:
             meta = MetaData(self._db_ng)
             books = Table('books', meta, autoload=True)
@@ -131,10 +131,12 @@ class CalibreDBW:
                         .join(tags,
                             books_tags_link.c.tag == tags.c.id))\
                         .where(tags.c.name.ilike('%%%s%%' % search))\
-                        .order_by(books.c.last_modified.desc())
+                        .order_by(books.c.last_modified.desc())\
+                        .limit(limit)\
+                        .offset((page - 1) * limit)
             return con.execute(stm).fetchall()
 
-    def search_books_series(self, search):
+    def search_books_series(self, search, page=1, limit=30):
         with self._db_ng.connect() as con:
             meta = MetaData(self._db_ng)
             books = Table('books', meta, autoload=True)
@@ -157,10 +159,12 @@ class CalibreDBW:
                         .join(series,
                             books_series_link.c.series == series.c.id))\
                         .where(series.c.name.ilike('%%%s%%' % search))\
-                        .order_by(books.c.last_modified.desc())
+                        .order_by(books.c.last_modified.desc())\
+                        .limit(limit)\
+                        .offset((page - 1) * limit)
             return con.execute(stm).fetchall()
 
-    def search_books_authors(self, search):
+    def search_books_authors(self, search, page=1, limit=30):
         with self._db_ng.connect() as con:
             meta = MetaData(self._db_ng)
             books = Table('books', meta, autoload=True)
@@ -176,18 +180,20 @@ class CalibreDBW:
                         .join(authors,
                             books_authors_link.c.author == authors.c.id))\
                         .where(authors.c.name.ilike('%%%s%%' % search))\
-                        .order_by(books.c.last_modified.desc())
+                        .order_by(books.c.last_modified.desc())\
+                        .limit(limit)\
+                        .offset((page - 1) * limit)
             return con.execute(stm).fetchall()
 
 
     def search_books(self, search, attribute, page=1, limit=30):
         if attribute and attribute in ['authors', 'series', 'tags'] and search:
             if attribute == 'authors':
-                return self.search_books_authors(search)
+                return self.search_books_authors(search, page, limit)
             elif attribute == 'series':
-                return self.search_books_series(search)
+                return self.search_books_series(search, page, limit)
             elif attribute == 'tags':
-                return self.search_books_tags(search)
+                return self.search_books_tags(search, page, limit)
         else:
             with self._db_ng.connect() as con:
                 meta = MetaData(self._db_ng)
