@@ -129,8 +129,8 @@ def add_format(book_id):
     if 'format_upload' in request.files:
         for format_file in request.files.getlist('format_upload'):
             ext = format_file.filename.split('.')
-            if len(ext) <= 1 or ext[1].upper() not in app.config['CALIBRE_EXT_UP']:
-                flash_error('Could not add %s to library' % format_file.filename)
+            if len(ext) <= 1 or ext[-1].upper() not in app.config['CALIBRE_EXT_UP']:
+                flash_error('Could not add %s to library (Invalid file)' % format_file.filename)
                 return redirect(url_for("index"))
             tmp_dir = app.config['CALIBRE_TEMP_DIR']
             tmp_file = os.path.join(tmp_dir, format_file.filename)
@@ -150,8 +150,8 @@ def upload():
     if 'books_upload' in request.files:
         for book_file in request.files.getlist('books_upload'):
             ext = book_file.filename.split('.')
-            if len(ext) <= 1 or ext[1].upper() not in app.config['CALIBRE_EXT_UP']:
-                flash_error('Could not add %s to library' % book_file.filename)
+            if len(ext) <= 1 or ext[-1].upper() not in app.config['CALIBRE_EXT_UP']:
+                flash_error('Could not add %s to library (Invalid file)' % book_file.filename)
                 return redirect(url_for("index"))
             tmp_dir = app.config['CALIBRE_TEMP_DIR']
             tmp_file = os.path.join(tmp_dir, book_file.filename)
