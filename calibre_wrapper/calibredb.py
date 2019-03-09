@@ -305,7 +305,8 @@ class CalibreDBW:
 
     def get_book_attributes(self, book_id, attribute_table_name,
                             attribute_column_name,
-                            attribute_link_name):
+                            attribute_link_name,
+                            first=False):
         with self._db_ng.connect() as con:
             meta = MetaData(self._db_ng)
             books_attributes_link = Table('books_%s_link'
@@ -318,19 +319,24 @@ class CalibreDBW:
                         getattr(books_attributes_link.c,
                             attribute_link_name) == attributes.c.id))\
                         .where(books_attributes_link.c.book == book_id)
+            if first:
+                return self.resultproxy_to_dict(con.execute(stm).first())
             return self.resultproxy_to_dict(con.execute(stm).fetchall())
 
     def get_book_tags(self, book_id):
         return self.get_book_attributes(book_id, 'tags', 'name', 'tag')
 
     def get_book_publishers(self, book_id):
-        return self.get_book_attributes(book_id, 'publishers', 'name', 'publisher')
+        return self.get_book_attributes(book_id, 'publishers', 'name',
+                'publisher')
 
     def get_book_ratings(self, book_id):
-        return self.get_book_attributes(book_id, 'ratings', 'rating', 'rating')
+        return self.get_book_attributes(book_id, 'ratings', 'rating', 'rating',
+                first=True)
 
     def get_book_languages(self, book_id):
-        return self.get_book_attributes(book_id, 'languages', 'lang_code', 'lang_code')
+        return self.get_book_attributes(book_id, 'languages', 'lang_code',
+                'lang_code')
 
     def get_book_details(self, book_id):
         book = self.resultproxy_to_dict(self.get_book(book_id))
@@ -339,7 +345,8 @@ class CalibreDBW:
                 for pub in self.get_book_publishers(book_id)])
         book['languages'] = ', '.join([lang['lang_code']
                 for lang in self.get_book_languages(book_id)])
-        book['rating'] = self.get_book_ratings(book_id)
+        rating = self.get_book_ratings(book_id).get('rating')
+        book['rating'] = int(rating / 2) if rating else rating
         formats = self.get_book_formats(book_id)
         return (book, formats)
 
