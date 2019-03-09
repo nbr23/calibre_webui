@@ -119,7 +119,7 @@ class CalibreDBW:
                     meta, autoload=True)
             tags = Table('tags', meta, autoload=True)
 
-            stm = select([books.c.title,
+            stm = select([books.c.title, books.c.has_cover,
                 books.c.id,
                 authors.c.name.label('author')])\
                         .select_from(books.join(books_authors_link,
@@ -147,7 +147,7 @@ class CalibreDBW:
                     meta, autoload=True)
             series = Table('series', meta, autoload=True)
 
-            stm = select([books.c.title,
+            stm = select([books.c.title, books.c.has_cover,
                 books.c.id,
                 authors.c.name.label('author')])\
                         .select_from(books.join(books_authors_link,
@@ -172,7 +172,7 @@ class CalibreDBW:
                     meta, autoload=True)
             authors = Table('authors', meta, autoload=True)
 
-            stm = select([books.c.title,
+            stm = select([books.c.title, books.c.has_cover,
                 books.c.id,
                 authors.c.name.label('author')])\
                         .select_from(books.join(books_authors_link,
@@ -208,7 +208,7 @@ class CalibreDBW:
                             .where(books_authors_link.c.book == books.c.id)\
                             .label('author')
                 if search:
-                    stm = select([books.c.title,
+                    stm = select([books.c.title, books.c.has_cover,
                         books.c.id, author])\
                         .where(books.c.title.ilike('%%%s%%' % search) |
                                 author.ilike('%%%s%%' % search))\
@@ -216,7 +216,7 @@ class CalibreDBW:
                         .limit(limit)\
                         .offset((page - 1) * limit)
                 else:
-                    stm = select([books.c.title,
+                    stm = select([books.c.title, books.c.has_cover,
                         books.c.id,
                         author])\
                         .order_by(books.c.last_modified.desc())\
