@@ -40,8 +40,15 @@
         <label class="col-form-label col-sm-2" for="book_pubdate">Publication</label>
         <input type="text" class="form-control col-sm-10" id="book_pubdate" value="{{book.pubdate}}">
       </div>
-
-
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="book_rating">Rating</label>
+        <select id="book_rating" class="form-control col-sm-10">
+          <option {% if not book.rating %}selected{% endif%}>Not rated</option>
+          {% for i in range(0, 6) %}
+          <option {% if book.rating == i %}selected{% endif %}>{{ i }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="text-center"><button type="submit" class="btn btn-primary">Save</button></div>
     </form>
   </div>
