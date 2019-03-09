@@ -1,5 +1,6 @@
 from flask import render_template, request, Response, send_from_directory, \
         jsonify, make_response, redirect, url_for, flash
+from werkzeug.utils import secure_filename
 from urllib.parse import urljoin
 import os
 
@@ -133,7 +134,7 @@ def add_format(book_id):
                 flash_error('Could not add %s to library (Invalid file)' % format_file.filename)
                 return redirect(url_for("index"))
             tmp_dir = app.config['CALIBRE_TEMP_DIR']
-            tmp_file = os.path.join(tmp_dir, format_file.filename)
+            tmp_file = os.path.join(tmp_dir,  secure_filename(format_file.filename))
             format_file.save(tmp_file)
             if app.calibredb_wrap.add_format(book_id, tmp_file) == 0:
                 flash_success('%s uploaded and added to library' % format_file.filename)
@@ -154,7 +155,7 @@ def upload():
                 flash_error('Could not add %s to library (Invalid file)' % book_file.filename)
                 return redirect(url_for("index"))
             tmp_dir = app.config['CALIBRE_TEMP_DIR']
-            tmp_file = os.path.join(tmp_dir, book_file.filename)
+            tmp_file = os.path.join(tmp_dir,  secure_filename(book_file.filename))
             book_file.save(tmp_file)
             if app.calibredb_wrap.add_book(tmp_file) == 0:
                 flash_success('%s uploaded and added to library' % book_file.filename)
