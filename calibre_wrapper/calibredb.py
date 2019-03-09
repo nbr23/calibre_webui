@@ -224,7 +224,10 @@ class CalibreDBW:
                         .offset((page - 1) * limit)
                 return con.execute(stm).fetchall()
 
-    def resultproxy_to_dict(self, result):
+    @staticmethod
+    def resultproxy_to_dict(result):
+        if not result:
+            return {}
         if isinstance(result, RowProxy):
             return {field: result[field] for field in result.keys()}
         res = []
