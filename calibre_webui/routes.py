@@ -43,8 +43,9 @@ def get_books():
     books = app.calibredb_wrap.search_books(search.lower() if search else None,
             scope.lower() if scope else None,
             page=page)
-    dic = app.calibredb_wrap.resultproxy_to_dict(books)
-    return jsonify(dic)
+    if not books:
+        return jsonify([])
+    return jsonify(app.calibredb_wrap.resultproxy_to_dict(books))
 
 @app.route('/tasks')
 def list_tasks():
