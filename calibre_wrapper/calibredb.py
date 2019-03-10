@@ -237,51 +237,31 @@ class CalibreDBW:
             res.append({field: row[field] for field in row.keys()})
         return res
 
-    def list_tags(self):
-        tags_list = []
+    def list_books_attributes(self, attr_table, attr_link_column, attr_column):
+        attr_list = []
         meta = MetaData(self._db_ng)
-        tags = Table('tags', meta, autoload=True)
-        books_tags_link = Table('books_tags_link', meta, autoload=True)
+        a_table = Table(attr_table, meta, autoload=True)
+        books_attr_link = Table('books_%s_link' % attr_table, meta,
+                autoload=True)
 
         with self._db_ng.connect() as con:
-            stm = select([tags]).order_by(tags.c.name)
-            for tag in con.execute(stm).fetchall():
-                stm = select([books_tags_link])\
-                        .where(books_tags_link.c.tag == tag.id).count()
-                tags_list.append({'name': tag.name,
+            stm = select([a_table]).order_by(getattr(a_table.c, attr_column))
+            for attr in con.execute(stm).fetchall():
+                stm = select([books_attr_link])\
+                        .where(getattr(books_attr_link.c,
+                            attr_link_column) == attr.id).count()
+                attr_list.append({'name': getattr(attr, attr_column),
                     'count': con.execute(stm).first()[0]})
-        return tags_list
+        return attr_list
+
+    def list_tags(self):
+        return self.list_books_attributes('tags', 'tag', 'name')
 
     def list_series(self):
-        series_list = []
-        meta = MetaData(self._db_ng)
-        series = Table('series', meta, autoload=True)
-        books_series_link = Table('books_series_link', meta, autoload=True)
-
-        with self._db_ng.connect() as con:
-            stm = select([series]).order_by(series.c.name)
-            for serie in con.execute(stm).fetchall():
-                stm = select([books_series_link])\
-                        .where(books_series_link.c.series == serie.id).count()
-                series_list.append({'name': serie.name,
-                    'count': con.execute(stm).first()[0]})
-        return series_list
+        return self.list_books_attributes('series', 'series', 'name')
 
     def list_authors(self):
-        authors_list = []
-        meta = MetaData(self._db_ng)
-        authors = Table('authors', meta, autoload=True)
-        books_authors_link = Table('books_authors_link', meta, autoload=True)
-
-        with self._db_ng.connect() as con:
-            stm = select([authors]).order_by(authors.c.name)
-            for author in con.execute(stm).fetchall():
-                stm = select([books_authors_link])\
-                        .where(books_authors_link.c.author == author.id)\
-                        .count()
-                authors_list.append({'name': author.name,
-                    'count': con.execute(stm).first()[0]})
-        return authors_list
+        return self.list_books_attributes('authors', 'author', 'name')
 
     def get_book(self, book_id):
         with self._db_ng.connect() as con:
