@@ -330,6 +330,7 @@ class CalibreDBW:
         rating = self.get_book_ratings(book_id).get('rating')
         book['rating'] = int(rating / 2) if rating else rating
         formats = self.get_book_formats(book_id)
+        book['authors'] = ' & '.join(book['authors'].split(';'))
         return (book, formats)
 
     def get_book_formats(self, book_id):
