@@ -50,6 +50,15 @@ class CalibreDBW:
         return subprocess.run(['calibredb', 'remove', '--permanent',
             '--library-path', self._calibre_lib_dir, str(book_id)]).returncode
 
+    def save_metadata(self, book_id, metadata):
+        command = ['calibredb', 'set_metadata',
+                '--library-path', self._calibre_lib_dir]
+        for field, value in metadata.items():
+            command.append('-f')
+            command.append('%s:%s' % (field, value))
+        command.append(str(book_id))
+        return subprocess.run(command).returncode
+
     def list_tasks(self):
         tasks_list = self._redis_db.lrange(self._task_list_name, 0, -1)
         return [self._redis_db.hgetall(task) for task in tasks_list]
