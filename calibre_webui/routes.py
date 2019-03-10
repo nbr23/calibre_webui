@@ -100,6 +100,34 @@ def book_edit(book_id):
             formats_to=app.config['CALIBRE_EXT_CONV'],
             preferred=app.config['FORMAT_PREFERRED'])
 
+@app.route('/book/<int:book_id>/save', methods=['POST'])
+def book_save(book_id):
+    metadata = {}
+    book, formats = app.calibredb_wrap.get_book_details(book_id)
+    for field in ['title', 'authors', 'publisher', 'comments', 'tags',
+            'languages', 'pubdate']:
+        if field in request.form and \
+                request.form.get(field) != book[field]:
+            metadata[field] = request.form.get(field)
+
+    if 'rating' in request.form and \
+            request.form.get('rating') != book['rating']:
+        if request.form.get('rating') == 'Not rated':
+            metadata['rating'] = -1
+        else:
+            metadata['rating'] = int(request.form.get('rating')) * 2
+    if 'pubdate' in metadata:
+        metadata['pubdate'] = '%s+00:00' % 'T'.join(metadata['pubdate'].split(' '))
+
+    if len(metadata) == 0:
+        flash_error('No changes saved')
+    elif app.calibredb_wrap.save_metadata(book_id, metadata) == 0:
+        flash_success('Metadata updated!')
+    else:
+        flash_error('Error updating metadata')
+    return redirect(url_for("book_edit", book_id=book_id))
+
+
 @app.route('/book/<int:book_id>/file/<book_format>/')
 def download_book_file(book_id, book_format):
     fpath, fname = app.calibredb_wrap.get_book_file(book_id,
