@@ -30,24 +30,25 @@ class CalibreDBW:
         self.clear_tasks()
 
     def add_book(self, file_path):
-        return subprocess.call(['calibredb', 'add', '-d', file_path,
-            '--library-path', self._calibre_lib_dir])
+        return subprocess.run(['calibredb', 'add', '-d', file_path,
+            '--library-path', self._calibre_lib_dir]).returncode
 
     def add_format(self, book_id, file_path):
-        return subprocess.call(['calibredb', 'add_format',
-            '--library-path', self._calibre_lib_dir, str(book_id), file_path])
+        return subprocess.run(['calibredb', 'add_format',
+            '--library-path', self._calibre_lib_dir, str(book_id),
+            file_path]).returncode
 
     def remove_format(self, book_id, book_format):
-        success = subprocess.call(['calibredb', 'remove_format',
+        success = subprocess.run(['calibredb', 'remove_format',
             '--library-path', self._calibre_lib_dir, str(book_id),
-            book_format])
+            book_format]).returncode
         if success == 0 and len(self.get_book_formats(book_id)) < 1:
             return self.remove_book(book_id)
         return success
 
     def remove_book(self, book_id):
-        return subprocess.call(['calibredb', 'remove', '--permanent',
-            '--library-path', self._calibre_lib_dir, str(book_id)])
+        return subprocess.run(['calibredb', 'remove', '--permanent',
+            '--library-path', self._calibre_lib_dir, str(book_id)]).returncode
 
     def list_tasks(self):
         tasks_list = self._redis_db.lrange(self._task_list_name, 0, -1)
@@ -98,7 +99,8 @@ class CalibreDBW:
         tmp_file = os.path.join(tmp_dir, 'calibre_temp_%s.%s' % (book_id,
             format_to.lower()))
         fullpath = os.path.join(fpath, fname)
-        if subprocess.call(['ebook-convert', fullpath, tmp_file]) == 0:
+        if subprocess.run(['ebook-convert', fullpath,
+                            tmp_file]).returncode == 0:
             if self.get_book(book_id) == None:
                 self.add_book(tmp_file)
             else:
