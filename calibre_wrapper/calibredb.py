@@ -123,7 +123,7 @@ class CalibreDBW:
 
             stm = select([books.c.title, books.c.has_cover,
                 books.c.id,
-                authors.c.name.label('author')])\
+                authors.c.name.label('authors')])\
                         .select_from(books.join(books_authors_link,
                             books_authors_link.c.book == books.c.id)\
                         .join(authors,
@@ -151,7 +151,7 @@ class CalibreDBW:
 
             stm = select([books.c.title, books.c.has_cover,
                 books.c.id,
-                authors.c.name.label('author')])\
+                authors.c.name.label('authors')])\
                         .select_from(books.join(books_authors_link,
                             books_authors_link.c.book == books.c.id)\
                         .join(authors,
@@ -176,7 +176,7 @@ class CalibreDBW:
 
             stm = select([books.c.title, books.c.has_cover,
                 books.c.id,
-                authors.c.name.label('author')])\
+                authors.c.name.label('authors')])\
                         .select_from(books.join(books_authors_link,
                             books_authors_link.c.book == books.c.id)\
                         .join(authors,
@@ -208,7 +208,7 @@ class CalibreDBW:
                         .select_from(authors.join(books_authors_link,
                             books_authors_link.c.author == authors.c.id))\
                             .where(books_authors_link.c.book == books.c.id)\
-                            .label('author')
+                            .label('authors')
                 if search:
                     stm = select([books.c.title, books.c.has_cover,
                         books.c.id, author])\
@@ -276,7 +276,7 @@ class CalibreDBW:
                     .select_from(authors.join(books_authors_link,
                         books_authors_link.c.author == authors.c.id))\
                     .where(books_authors_link.c.book == books.c.id)\
-                    .label('author')
+                    .label('authors')
             comment = select([comments.c.text])\
                     .where(comments.c.book == book_id).label('comments')
 
@@ -323,7 +323,7 @@ class CalibreDBW:
     def get_book_details(self, book_id):
         book = self.resultproxy_to_dict(self.get_book(book_id))
         book['tags'] = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
-        book['publishers'] = ', '.join([pub['name']
+        book['publisher'] = ', '.join([pub['name']
                 for pub in self.get_book_publishers(book_id)])
         book['languages'] = ', '.join([lang['lang_code']
                 for lang in self.get_book_languages(book_id)])
