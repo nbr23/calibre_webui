@@ -30,7 +30,7 @@ var load_more_books = function() {
       for (i = 0; i < data.length; i++)
       {
         authors = [];
-        authors_split = data[i]['author'].split(';');
+        authors_split = data[i]['authors'].split(';');
         for (k = 0; k < authors_split.length; k++){
           authors.push('<a style="color: #00aaaa; font-size: 90%;" href="{{ url_for('index')}}?search=' + authors_split[k] + '">' + authors_split[k] + '</a>');
         }
