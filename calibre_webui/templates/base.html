@@ -3,7 +3,7 @@
   <head>
     <title>Calibre | {% block page_title %}{%endblock%}</title>
     <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
 
 <style>
 .sidebar {
@@ -92,8 +92,8 @@
     </div>
 
 
-    <script src="{{ url_for('static', filename='jquery-3.3.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
   <script type="text/javascript">
     $(function () {
       $("#books_upload").change(function () {
