@@ -290,7 +290,7 @@ class CalibreDBW:
                     .where(comments.c.book == book_id).label('comments')
 
             stm = select([books.c.title, books.c.path, books.c.pubdate,
-                        books.c.id, author, comment])\
+                        books.c.id, books.c.has_cover, author, comment])\
                     .where(books.c.id == book_id)
             return con.execute(stm).first()
 
