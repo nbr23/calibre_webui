@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Calibre | {% block page_title %}{%endblock%}</title>
+    <meta charset="utf-8">
+    <style>
+    .cover {
+      height:300px;
+      max-width: 100%;
+    }
+    td {
+      padding: 10px;
+    }
+    </style>
+    <title>{{title}}</title>
+  </head>
+
+  <body>
+    <center>
+    <h1>{{title}}</h1>
+    <table>
+    {% for book in books %}
+    {% if loop.index % 3 == 1 %}
+    <tr>
+    {% endif %}
+      <td>
+        <a href="{{ url_for('download_book_file', book_id=book.id, book_format=book_format) }}">
+          <img class="cover" src="{{ url_for('get_cover', book_id=book.id) }}"/><br/>
+          {{book.title | truncate(30)}}
+        </a>
+      </td>
+    {% if loop.index % 3 == 0 %}
+    </tr>
+    {% endif %}
+    {% endfor %}
+    </table>
+    <h1><a href="{{ url_for('download_feed', book_format=book_format, page=(page+1)) }}">Next</a></h1>
+    </center>
+  </body>
+</html>

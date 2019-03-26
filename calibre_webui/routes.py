@@ -33,6 +33,13 @@ def index():
     return render_template('index.html', search=search,
             scope=scope, title='My Books')
 
+@app.route('/feed/<book_format>')
+@app.route('/feed/<book_format>/<int:page>')
+def download_feed(book_format, page=1):
+    books = app.calibredb_wrap.books_by_format(book_format, page=page)
+    return render_template('feed.html', books=books, title='My Books',
+            book_format=book_format, page=page)
+
 @app.route('/api/books')
 def get_books():
     page = int(request.args.get('page')) if 'page' in request.args else 1
