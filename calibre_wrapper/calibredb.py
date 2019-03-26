@@ -197,6 +197,22 @@ class CalibreDBW:
             return con.execute(stm).fetchall()
 
 
+    def books_by_format(self, book_format, page=1, limit=30):
+        with self._db_ng.connect() as con:
+            meta = MetaData(self._db_ng)
+            books = Table('books', meta, autoload=True)
+            data = Table('Data', meta, autoload=True)
+            stm = select([books.c.title, books.c.has_cover,
+                        books.c.id, data.c.format])\
+                        .select_from(books.join(data, data.c.book == books.c.id))\
+                        .where(data.c.format == book_format.upper())\
+                        .order_by(books.c.last_modified.desc())\
+                        .limit(limit)\
+                        .offset((page - 1) * limit)
+            return con.execute(stm).fetchall()
+
+
+
     def search_books(self, search, attribute, page=1, limit=30):
         if attribute and attribute in ['authors', 'series', 'tags'] and search:
             if attribute == 'authors':
