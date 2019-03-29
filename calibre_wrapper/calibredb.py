@@ -211,8 +211,6 @@ class CalibreDBW:
                         .offset((page - 1) * limit)
             return con.execute(stm).fetchall()
 
-
-
     def search_books(self, search, attribute, page=1, limit=30):
         if attribute and attribute in ['authors', 'series', 'tags'] and search:
             if attribute == 'authors':
@@ -346,16 +344,17 @@ class CalibreDBW:
                 'lang_code')
 
     def get_book_details(self, book_id):
-        book = self.resultproxy_to_dict(self.get_book(book_id))
-        book['tags'] = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
-        book['publisher'] = ', '.join([pub['name']
+        book, formats = self.resultproxy_to_dict(self.get_book(book_id)), None
+        if book:
+            book['tags'] = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
+            book['publisher'] = ', '.join([pub['name']
                 for pub in self.get_book_publishers(book_id)])
-        book['languages'] = ', '.join([lang['lang_code']
+            book['languages'] = ', '.join([lang['lang_code']
                 for lang in self.get_book_languages(book_id)])
-        rating = self.get_book_ratings(book_id).get('rating')
-        book['rating'] = int(rating / 2) if rating else rating
-        formats = self.get_book_formats(book_id)
-        book['authors'] = ' & '.join(book['authors'].split(';'))
+            rating = self.get_book_ratings(book_id).get('rating')
+            book['rating'] = int(rating / 2) if rating else rating
+            formats = self.get_book_formats(book_id)
+            book['authors'] = ' & '.join(book['authors'].split(';'))
         return (book, formats)
 
     def get_book_formats(self, book_id):
