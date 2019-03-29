@@ -34,9 +34,12 @@ die-on-term = true
 logto = /var/log/calibre/error.log
 log-5xx = true
 disable-logging = true
+enable-threads = true
 
 mount = /=calibre_webui:app
 ```
+
+Make sure threads are enabled, or conversion tasks will not run.
 
 ### nginx
 
