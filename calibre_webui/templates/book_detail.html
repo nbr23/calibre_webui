@@ -7,7 +7,7 @@
 {% block body %}
 <div class="row">
   <div class="col-3">
-    <img class="mx-auto d-block" style="width: 100%;" src="{% if book.has_cover %}{{ url_for ('get_cover', book_id=book.id) }} {% else %}{{ url_for('static', filename='img/default_cover.jpg') }}{% endif %}"/><br/>
+    <img class="mx-auto d-block" style="width: 100%;" src="{{ url_for ('get_cover', book_id=book.id) }}"/><br/>
     <p class="text-center"><a type="button" class="btn btn-danger" href="{{url_for('delete_book', book_id=book.id)}}">Delete book</a></p>
   </div>
   <div class="col-5">

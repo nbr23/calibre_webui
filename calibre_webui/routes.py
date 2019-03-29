@@ -90,9 +90,11 @@ def list_series():
 @app.route('/cover/<int:book_id>')
 def get_cover(book_id):
     book = app.calibredb_wrap.get_book(book_id)
-    return send_from_directory(os.path.join(
-        app.config['CALIBRE_LIBRARY_PATH'], book.path),
-        'cover.jpg')
+    if book and book.has_cover:
+        return send_from_directory(os.path.join(
+            app.config['CALIBRE_LIBRARY_PATH'], book.path),
+            'cover.jpg')
+    return redirect('/static/img/default_cover.jpg')
 
 @app.route('/book/<int:book_id>/edit', methods=['GET', 'POST'])
 def book_edit(book_id):
