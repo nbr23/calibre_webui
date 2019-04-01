@@ -114,8 +114,8 @@ class CalibreDBW:
         task_id = self.create_redis_task(task_name, 'RUNNING')
         fpath, fname = self.get_book_file(book_id, format_from)
         tmp_dir = self._config['CALIBRE_TEMP_DIR']
-        tmp_file = os.path.join(tmp_dir, 'calibre_temp_%s.%s' % (book_id,
-            format_to.lower()))
+        tmp_file = os.path.join(tmp_dir, 'calibre_temp_%s_%i.%s' % (book_id,
+            uuid.uuid4().fields[1], format_to.lower()))
         fullpath = os.path.join(fpath, fname)
         if subprocess.run(['ebook-convert', fullpath,
                             tmp_file]).returncode == 0:
