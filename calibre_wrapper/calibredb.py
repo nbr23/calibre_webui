@@ -64,8 +64,10 @@ class CalibreDBW:
         return [self._redis_db.hgetall(task) for task in tasks_list]
 
     def clear_tasks(self):
+        tasks_list = self._redis_db.lrange(self._task_list_name, 0, -1)
+        for task in tasks_list:
+            self._redis_db.delete(task)
         self._redis_db.delete(self._task_list_name)
-
 
     def tasks_count(self):
         tasks = self.list_tasks()
@@ -100,9 +102,9 @@ class CalibreDBW:
 
     @threaded
     def convert_book(self, book_id, format_from, format_to):
-        task_id = self.create_redis_task('Convert book « %s » from %s to %s'
-                %  (self.get_book_title(book_id), format_from, format_to),
-                'RUNNING')
+        task_name = 'Convert book « %s » from %s to %s' \
+                    % (self.get_book_title(book_id), format_from, format_to)
+        task_id = self.create_redis_task(task_name, 'RUNNING')
         fpath, fname = self.get_book_file(book_id, format_from)
         tmp_dir = self._config['CALIBRE_TEMP_DIR']
         tmp_file = os.path.join(tmp_dir, 'calibre_temp_%s.%s' % (book_id,

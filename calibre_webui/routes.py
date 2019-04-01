@@ -69,6 +69,11 @@ def get_tasks_list():
 def get_tasks_count():
     return jsonify(app.calibredb_wrap.tasks_count())
 
+@app.route('/api/tasks/clear')
+def clear_tasks():
+    app.calibredb_wrap.clear_tasks()
+    return jsonify({})
+
 @app.route('/authors')
 def list_authors():
     authors = app.calibredb_wrap.list_authors()
