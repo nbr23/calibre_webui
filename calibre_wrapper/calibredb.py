@@ -59,12 +59,15 @@ class CalibreDBW:
         command.append(str(book_id))
         return subprocess.run(command).returncode
 
+    def list_tasks_id(self):
+        return self._redis_db.lrange(self._task_list_name, 0, -1)
+
     def list_tasks(self):
-        tasks_list = self._redis_db.lrange(self._task_list_name, 0, -1)
+        tasks_list = self.list_tasks_id()
         return [self._redis_db.hgetall(task) for task in tasks_list]
 
     def clear_tasks(self):
-        tasks_list = self._redis_db.lrange(self._task_list_name, 0, -1)
+        tasks_list = self.list_tasks_id()
         for task in tasks_list:
             self._redis_db.delete(task)
         self._redis_db.delete(self._task_list_name)
@@ -90,8 +93,12 @@ class CalibreDBW:
         self._redis_db.lpush(self._task_list_name, task_id)
         return task_id
 
-    def update_task_status(self, task_id, status):
-        self._redis_db.hmset(task_id, {'status': status})
+    def update_task_status(self, task_id, message, status):
+        if task_id in self.list_tasks_id():
+            self._redis_db.hmset(task_id,
+                    {'status': status, 'message': message})
+        else:
+            self.create_redis_task(message, status)
 
     def threaded(fn):
         def wrapper(*args, **kwargs):
@@ -117,9 +124,9 @@ class CalibreDBW:
             else:
                 self.add_format(book_id, tmp_file)
             os.remove(tmp_file)
-            self.update_task_status(task_id, 'COMPLETED')
+            self.update_task_status(task_id, task_name, 'COMPLETED')
         else:
-            self.update_task_status(task_id, 'CANCELED')
+            self.update_task_status(task_id, task_name, 'CANCELED')
 
     def search_books_tags(self, search, page=1, limit=30):
         with self._db_ng.connect() as con:
