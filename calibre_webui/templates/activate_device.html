@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+{{title}}
+{% endblock %}
+
+{% block body %}
+<div class="row">
+  <div class="col-5">
+    <form method="POST" action="{{ url_for('device_save') }}">
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="device_id">Device ID</label>
+        <input type="text" class="form-control col-sm-10" name="device_id" id="device_id" value="{{device.uid}}" readonly>
+      </div>
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="device_name">Device Name</label>
+        <input type="text" class="form-control col-sm-10" name="device_name" id="device_name" value="{{device.name}}">
+      </div>
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="device_formats">Supported Formats</label>
+        <input type="text" class="form-control col-sm-10" name="device_formats" id="device_formats" value="{{device.formats}}">
+      </div>
+      <div class="text-center"><button type="submit" class="btn btn-primary">Save and Activate</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

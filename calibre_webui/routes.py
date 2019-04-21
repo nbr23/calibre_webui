@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 from urllib.parse import urljoin
 import os
 
-from calibre_webui import app
+from calibre_webui import app, qrcode
 from calibre_wrapper.calibredb import CalibreDBW
 
 def flash_error(message):
@@ -33,12 +33,68 @@ def index():
     return render_template('index.html', search=search,
             scope=scope, title='My Books')
 
-@app.route('/feed/<book_format>')
-@app.route('/feed/<book_format>/<int:page>')
-def download_feed(book_format, page=1):
+
+@app.route('/feed/')
+def device_register():
+    uid = app.database.get_new_uid()
+    activate_url = '%sdevice/edit/%s' % (request.host_url, uid)
+    return render_template('register_device.html', activate_url=activate_url,
+            device_id=uid, title='New Device')
+
+@app.route('/device/save', methods=['POST'])
+def device_save():
+    if 'device_id' in request.form and \
+            'device_name' in request.form and \
+            'device_formats' in request.form:
+        uid = request.form.get('device_id')
+        name = request.form.get('device_name')
+        formats = request.form.get('device_formats')
+        device = app.database.get_device(uid=uid)
+        if not device:
+            app.database.add_device(uid=uid, name=name, formats=formats)
+        else:
+            app.database.update_device(uid=uid, name=name, formats=formats)
+        flash_success('Device %s saved!' % name)
+    else:
+        flash_error('Couldn\'t save device')
+    return redirect(url_for("device_list"))
+
+@app.route('/device/edit/<device_id>')
+def device_edit(device_id):
+    device = app.database.get_device(uid=device_id)
+    if not device:
+        device = app.database.generate_device(device_id)
+    return render_template('activate_device.html', device=device,
+            title='Activate Device')
+
+@app.route('/device/delete/<device_id>')
+def device_delete(device_id):
+    device = app.database.get_device(uid=device_id)
+    if device:
+        app.database.delete_device(device_id)
+        flash_success('Device deleted!')
+    else:
+        flash_error('Device not found')
+    return redirect(url_for("device_list"))
+
+@app.route('/device/list')
+def device_list():
+    devices = app.database.list_devices()
+    url = urljoin(request.host_url, url_for('device_register'))
+    return render_template('device_list.html', deviceslist=devices,
+            url=url, title='Devices')
+
+
+@app.route('/feed/<device_id>')
+@app.route('/feed/<device_id>/<int:page>')
+def device_feed(device_id, page=1):
+    device = app.database.get_device(device_id)
+    if not device:
+        return redirect(url_for("device_register"))
+    book_format = device.formats.upper()
     books = app.calibredb_wrap.books_by_format(book_format, page=page)
-    return render_template('feed.html', books=books, title='My Books',
-            book_format=book_format, page=page)
+    return render_template('feed.html', books=books, title=device.name,
+            book_format=book_format, page=page, device_id=device_id)
 
 @app.route('/api/books')
 def get_books():

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Calibre | {% block page_title %}{%endblock%}</title>
+    <meta charset="utf-8">
+    <style>
+    .cover {
+      height:300px;
+      max-width: 100%;
+    }
+    td {
+      padding: 10px;
+    }
+    </style>
+    <title>{{title}}</title>
+  </head>
+
+  <body>
+    <center>
+    <h1>{{title}}</h1>
+    <br/>
+    Activate this device:
+    <br/><br/><br/>
+    <img src="{{ qrcode(activate_url) }}">
+    <br/><br/><br/>
+    Or visit:
+    <br/>
+    {{activate_url}}
+    <br/><br/>
+    When completed, click on continue, and bookmark the page you land on:
+    <br/>
+    <a href="{{ url_for('device_feed', device_id=device_id) }}"><button>CONTINUE</button></a>
+    </center>
+  </body>
+</html>
