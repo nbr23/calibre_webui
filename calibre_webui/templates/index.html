@@ -36,11 +36,11 @@ var load_more_books = function() {
         }
         authors = authors.join(' - ');
         books_list += '<div class="col-sm-3 col-lg-2 col-xs-6 ">' +
-          '<a href="/book/' + data[i]['id'] + '/edit">' +
-          '<img class="cover mx-auto d-block" src="/cover/' + data[i]['id'] + '"/>' +
+          '<a href="/books/' + data[i]['id'] + '/edit">' +
+          '<img class="cover mx-auto d-block" src="/books/' + data[i]['id'] + '/cover"/>' +
           '</a><br/>' +
           '<center>' +
-          '<p><a style="color: #000000; font-size: 100%;" href="/book/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a></br>' +
+          '<p><a style="color: #000000; font-size: 100%;" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a></br>' +
           authors + '</p>' +
           '</center>' +
           '</div>';
