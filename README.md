@@ -70,5 +70,59 @@ Edit the `calibre_webui/calibre_webui.cfg` file and set at least:
 - `CALIBRE_LIBRARY_PATH`: Set to the path of an existing Calibre library. The
   directory *must* contain the metadata.db file
 - `APP_SECRET_KEY`: to a random string
-- `REDIS_HOST`: to the host running your redis DB (typically localhost if running
-  locally)
+- `REDIS_HOST`: to the host running your redis DB (typically localhost if
+  running locally)
+- `STATIC_URL`: to the url where your static files are hosted (jquery,
+  bootstrap)
+
+Docker
+------
+
+For ease of use, calibre_webui can be deployed using docker.
+
+### Configuration
+Before anything, make sure to edit `calibre_webui/calibre_webui.cfg` and set:
+- `APP_SECRET_KEY`: to a random string
+- `STATIC_URL`: to the url where your static files are hosted (jquery,
+  bootstrap)
+
+The variables `CALIBRE_LIBRARY_PATH`, `CALIBRE_TEMP_DIR`,
+`CALIBRE_WEBUI_DB_PATH` and `REDIS_HOST` have been preset for Docker use.
+
+You will also need to update the docker-compose.yml file to update the *source*
+of the calibre_library volume to point to a host directory where your library
+is or will be stores, for example as follows:
+```
+volumes:
+  - type: bind
+  source: /mnt/nfs_share/books
+  target: /data/calibre_library
+```
+
+### nginx
+The container will now listen on a tcp socket on port 8000, use an nginx
+configuration based on the following to server the content:
+```
+server {
+  listen 80 default_server;
+  listen [::]:80;
+
+
+  root /var/www/html;
+
+  index index.html index.htm index.nginx-debian.html;
+
+  server_name calibre.example.com;
+
+  location / {
+    include uwsgi_params;
+    uwsgi_pass localhost:8000;
+  }
+}
+```
+
+Note: it is advised to increase your
+[client_max_body_size](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size)
+in nginx, as you will most likely be uploading large files to calibre_webui
+(the default being
+1M).
