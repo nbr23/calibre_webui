@@ -2,17 +2,19 @@ version: "3.2"
 services:
   redis:
     image: redis
+    restart: always
 
   app:
     build:
       context: .
     command: /var/www/calibre_webui/run_app.sh
+    restart: always
     links:
       - redis
     depends_on:
       - redis
     ports:
-      - "8000:8000"
+      - "8000"
     volumes:
       - type: bind
         source: # FIXME

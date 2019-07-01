@@ -1,8 +1,8 @@
-FROM python:3.7-stretch
+FROM debian:buster
 
 EXPOSE 8000
 
-RUN apt update && apt -y install calibre sqlite3
+RUN apt update && apt -y install calibre sqlite3 python3 python3-pip zlib1g-dev libjpeg-dev
 RUN useradd -ms /bin/bash -g www-data calibre
 
 COPY . /var/www/calibre_webui
