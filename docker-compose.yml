@@ -9,7 +9,7 @@ services:
     ports:
       - "8000"
     tmpfs:
-      - /data/tmp:mode=660,uid=112,gid=33
+      - /data/tmp:mode=770,uid=112,gid=33
     volumes:
       - type: bind
         source: # FIXME
