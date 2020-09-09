@@ -11,8 +11,6 @@ Installation
 
 - [Calibre](https://calibre-ebook.com/): Calibre-webui depends on Calibre to
   be installed on the system as it operates as a front-end to it.
-- [Redis](https://redis.io/): Redis is used for background task message
-  communication management.
 - Python 3.7 (Not tested with lower versions)
 - Python requirements can be installed with:
 `pip install -r requirements.txt`
@@ -70,8 +68,6 @@ Edit the `calibre_webui/calibre_webui.cfg` file and set at least:
 - `CALIBRE_LIBRARY_PATH`: Set to the path of an existing Calibre library. The
   directory *must* contain the metadata.db file
 - `APP_SECRET_KEY`: to a random string
-- `REDIS_HOST`: to the host running your redis DB (typically localhost if
-  running locally)
 - `STATIC_URL`: to the url where your static files are hosted (jquery,
   bootstrap)
 
@@ -87,7 +83,7 @@ Before anything, make sure to edit `calibre_webui/calibre_webui.cfg` and set:
   bootstrap)
 
 The variables `CALIBRE_LIBRARY_PATH`, `CALIBRE_TEMP_DIR`,
-`CALIBRE_WEBUI_DB_PATH` and `REDIS_HOST` have been preset for Docker use.
+`CALIBRE_WEBUI_DB_PATH` have been preset for Docker use.
 
 You will also need to update the docker-compose.yml file to update the *source*
 of the calibre_library volume to point to a host directory where your library
