@@ -7,6 +7,7 @@ from sqlalchemy.engine import RowProxy
 from threading import Thread
 import os
 import uuid
+from . import logdb
 
 class group_concat(expression.FunctionElement):
     name = "group_concat"
@@ -20,9 +21,8 @@ def group_concat_sqlite(element, compiler, **kw):
         return 'GROUP_CONCAT(%s)' % compiled
 
 class CalibreDBW:
-    def __init__(self, config, redis_db):
+    def __init__(self, config):
         self._task_list_name = 'CALIBRE_WEBUI_TASKS_LIST'
-        self._redis_db = redis_db
         self._config = config
         self._calibre_lib_dir = self._config['CALIBRE_LIBRARY_PATH']
         self._calibre_db = os.path.join(self._calibre_lib_dir, 'metadata.db')
@@ -59,18 +59,11 @@ class CalibreDBW:
         command.append(str(book_id))
         return subprocess.run(command).returncode
 
-    def list_tasks_id(self):
-        return self._redis_db.lrange(self._task_list_name, 0, -1)
-
     def list_tasks(self):
-        tasks_list = self.list_tasks_id()
-        return [self._redis_db.hgetall(task) for task in tasks_list]
+        return logdb.JobLogsDB(self._config).list_joblogs()
 
     def clear_tasks(self):
-        tasks_list = self.list_tasks_id()
-        for task in tasks_list:
-            self._redis_db.delete(task)
-        self._redis_db.delete(self._task_list_name)
+        return logdb.JobLogsDB(self._config).clear_joblogs()
 
     def tasks_count(self):
         tasks = self.list_tasks()
@@ -83,23 +76,6 @@ class CalibreDBW:
                 sum(t['status'] == 'COMPLETED' for t in tasks),
             }
 
-    def create_redis_task(self, message, status):
-        task_id = uuid.uuid4().hex
-        task = {
-                'status': status,
-                'message': message
-                }
-        self._redis_db.hmset(task_id, task)
-        self._redis_db.lpush(self._task_list_name, task_id)
-        return task_id
-
-    def update_task_status(self, task_id, message, status):
-        if task_id in self.list_tasks_id():
-            self._redis_db.hmset(task_id,
-                    {'status': status, 'message': message})
-        else:
-            self.create_redis_task(message, status)
-
     def threaded(fn):
         def wrapper(*args, **kwargs):
             thread = Thread(target=fn, args=args, kwargs=kwargs)
@@ -111,7 +87,7 @@ class CalibreDBW:
     def convert_book(self, book_id, format_from, format_to):
         task_name = 'Convert book « %s » from %s to %s' \
                     % (self.get_book_title(book_id), format_from, format_to)
-        task_id = self.create_redis_task(task_name, 'RUNNING')
+        task_id = logdb.JobLogsDB(self._config).push_joblog(task_name, 'RUNNING')
         fpath, fname = self.get_book_file(book_id, format_from)
         tmp_dir = self._config['CALIBRE_TEMP_DIR']
         tmp_file = os.path.join(tmp_dir, 'calibre_temp_%s_%i.%s' % (book_id,
@@ -124,9 +100,9 @@ class CalibreDBW:
             else:
                 self.add_format(book_id, tmp_file)
             os.remove(tmp_file)
-            self.update_task_status(task_id, task_name, 'COMPLETED')
+            logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
         else:
-            self.update_task_status(task_id, task_name, 'CANCELED')
+            logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
     def search_books_tags(self, search, page=1, limit=30):
         with self._db_ng.connect() as con:

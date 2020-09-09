@@ -1,5 +1,4 @@
 from flask import Flask
-import redis
 from flask_qrcode import QRcode
 
 from calibre_webui.calibre_webui_db import CalibreWebUIDB
@@ -15,9 +14,7 @@ app.FLASH = {'error': 'danger',
         'success': 'success',
         'debug': 'info'}
 
-app.redis_queue = redis.Redis(app.config['REDIS_HOST'],
-        charset="utf-8", decode_responses=True)
-app.calibredb_wrap = CalibreDBW(app.config, app.redis_queue)
+app.calibredb_wrap = CalibreDBW(app.config)
 app.database = CalibreWebUIDB(app.config)
 
 from calibre_webui import routes
