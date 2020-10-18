@@ -7,6 +7,12 @@ and library tool.
 Installation
 ------------
 
+### Ansible
+
+The role
+[ansible-role-calibrewebui](https://github.com/nbr23/ansible-role-calibrewebui)
+can be used for easy deployment.
+
 ### Dependencies
 
 - [Calibre](https://calibre-ebook.com/): Calibre-webui depends on Calibre to
