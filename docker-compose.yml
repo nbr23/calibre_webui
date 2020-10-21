@@ -4,7 +4,6 @@ services:
   app:
     build:
       context: .
-    command: /var/www/calibre_webui/run_app.sh
     restart: always
     ports:
       - "8000"
