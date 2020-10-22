@@ -11,7 +11,7 @@ Installation
 
 The role
 [ansible-role-calibrewebui](https://github.com/nbr23/ansible-role-calibrewebui)
-can be used for easy deployment.
+can be used for easy deployment using docker and nginx.
 
 ### Dependencies
 
@@ -23,25 +23,7 @@ can be used for easy deployment.
 
 ### uWSGI
 
-Create a uWSGI configuration file, eg:
-
-```
-[uwsgi]
-master = true
-processes = 5
-
-uid = calibre
-socket = /var/run/calibre/calibre_webui.sock
-chmod-socket = 660
-vacuum = true
-die-on-term = true
-logto = /var/log/calibre/error.log
-log-5xx = true
-disable-logging = true
-enable-threads = true
-
-mount = /=calibre_webui:app
-```
+Update the uWSGI configuration file `calibre_webui.ini` to fit your need.
 
 Make sure threads are enabled, or conversion tasks will not run.
 
@@ -70,7 +52,13 @@ If using a virtualenv, make sure to activate it in your execution command.
 Configuration
 -------------
 
-Edit the `calibre_webui/calibre_webui.cfg` file and set at least:
+All configuration variables defaults and descriptions can be found in
+[calibre_webui/default_config.py](https://github.com/nbr23/calibre_webui/blob/master/calibre_webui/default_config.py).
+
+You can set and overwrite these variables by setting them in a similarly
+formatted file under `/etc/calibre_webui/calibre_webui.cfg`.
+
+It is required to set at least the following variables:
 - `CALIBRE_LIBRARY_PATH`: Set to the path of an existing Calibre library. The
   directory *must* contain the metadata.db file
 - `APP_SECRET_KEY`: to a random string
@@ -83,13 +71,25 @@ Docker
 For ease of use, calibre_webui can be deployed using docker.
 
 ### Configuration
-Before anything, make sure to edit `calibre_webui/calibre_webui.cfg` and set:
+
+Create your local `calibre_webui.cfg` file setting at least:
+
 - `APP_SECRET_KEY`: to a random string
 - `STATIC_URL`: to the url where your static files are hosted (jquery,
   bootstrap)
 
 The variables `CALIBRE_LIBRARY_PATH`, `CALIBRE_TEMP_DIR`,
-`CALIBRE_WEBUI_DB_PATH` have been preset for Docker use.
+`CALIBRE_WEBUI_DB_PATH` defaults have been preset for Docker use.
+
+Then bind it in your docker-compose to `/etc/calibre_webui/calibre_webui.cfg`:
+
+```
+services:
+  app:
+    [...]
+    volumes:
+    - ./calibre_webui.cfg:/etc/calibre_webui/calibre_webui.cfg:ro
+```
 
 You will also need to update the docker-compose.yml file to update the *source*
 of the calibre_library volume to point to a host directory where your library

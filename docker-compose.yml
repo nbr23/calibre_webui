@@ -13,3 +13,4 @@ services:
       - type: bind
         source: # FIXME
         target: /data/calibre_library
+      - ./calibre_webui.cfg:/etc/calibre_webui/calibre_webui.cfg:ro
