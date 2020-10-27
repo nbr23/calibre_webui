@@ -11,8 +11,10 @@ ENV LC_ALL en_US.UTF-8
 RUN useradd -ms /bin/bash -u ${CALIBRE_UID} -g www-data calibre
 
 RUN mkdir /etc/calibre_webui/ && chown ${CALIBRE_UID}:www-data /etc/calibre_webui/
-COPY . /var/www/calibre_webui
 WORKDIR /var/www/calibre_webui
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-RUN pip3 install -r /var/www/calibre_webui/requirements.txt
+COPY . .
+
 CMD /var/www/calibre_webui/run_app.sh
