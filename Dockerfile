@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM debian:buster-slim
 
 EXPOSE 8000
 ARG CALIBRE_UID=112
