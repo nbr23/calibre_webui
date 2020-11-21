@@ -5,6 +5,7 @@ from sqlalchemy.sql import select, expression
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.engine import RowProxy
 from threading import Thread
+from tempfile import NamedTemporaryFile
 import os
 import uuid
 from . import logdb
@@ -49,6 +50,22 @@ class CalibreDBW:
     def remove_book(self, book_id):
         return subprocess.run(['calibredb', 'remove', '--permanent',
             '--library-path', self._calibre_lib_dir, str(book_id)]).returncode
+
+    def fetch_metadata(self, book_id, tmp_dir):
+        book, formats = self.get_book_details(book_id)
+        command = ['fetch-ebook-metadata', '-a', book['authors'], '-t', book['title'], '-o']
+        tmp_file = NamedTemporaryFile(dir=tmp_dir)
+        ret = subprocess.run(command, stdout=tmp_file)
+        if ret.returncode != 0:
+            return False
+        command = ['calibredb', 'set_metadata', str(book_id), tmp_file.name, '--library-path', self._calibre_lib_dir]
+        ret = subprocess.run(command)
+        if ret.returncode != 0:
+            return False
+        return subprocess.run(['calibredb',
+                                'embed_metadata',
+                                str(book_id)]).returncode == 0
+
 
     def save_metadata(self, book_id, metadata):
         command = ['calibredb', 'set_metadata',

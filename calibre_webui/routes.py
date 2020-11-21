@@ -186,6 +186,10 @@ def book_edit(book_id):
             formats_to=app.config['CALIBRE_EXT_CONV'],
             preferred=app.config['FORMAT_PREFERRED'])
 
+@app.route('/books/<int:book_id>/metadata', methods=['POST'])
+def book_refresh_metadata(book_id):
+    return { 'success': app.calibredb_wrap.fetch_metadata(book_id, app.config['CALIBRE_TEMP_DIR'])}
+
 @app.route('/books/<int:book_id>/save', methods=['POST'])
 def book_save(book_id):
     metadata = {}

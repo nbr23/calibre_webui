@@ -8,7 +8,10 @@
 <div class="row">
   <div class="col-3">
     <img class="mx-auto d-block" style="width: 100%;" src="{{ url_for ('get_cover', book_id=book.id) }}"/><br/>
-    <p class="text-center"><a type="button" class="btn btn-danger" href="{{url_for('delete_book', book_id=book.id)}}">Delete book</a></p>
+    <p class="text-center">
+        <button type="button" onclick="fetch_metadata()" class="btn btn-primary">Refresh Metadata</button>
+        <a type="button" class="btn btn-danger" href="{{url_for('delete_book', book_id=book.id)}}">Delete book</a>
+    </p>
   </div>
   <div class="col-5">
     <form method="POST" action="{{ url_for('book_save', book_id=book.id) }}">
@@ -24,6 +27,14 @@
         <label class="col-form-label col-sm-2" for="book_publisher">Publishers</label>
         <input type="text" class="form-control col-sm-10" name="publisher" id="book_publisher" value="{{book.publisher}}">
       </div>
+      {% if book.isbn %}
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="book_extlinks">External links</label>
+        <p id="book_extlinks">
+          <a href="https://openlibrary.org/isbn/{{ book.isbn }}">Open Library</a>
+        </p>
+      </div>
+      {% endif %}
       <div class="form-group row">
         <label class="col-form-label col-sm-2" for="book_commentss">Comments</label>
         <textarea class="form-control col-sm-10" rows="5" name="comments" id="book_comments">{% if book.comments %}{{book.comments}}{% endif %}</textarea>
@@ -49,7 +60,9 @@
           {% endfor %}
         </select>
       </div>
-      <div class="text-center"><button type="submit" class="btn btn-primary">Save</button></div>
+      <div class="text-center">
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
     </form>
   </div>
   <div class="col-4" style="padding-left: 5%;">
@@ -110,5 +123,10 @@
       $("#format-upload").submit();
     });
   });
+
+  function fetch_metadata() {
+      $.post("/books/{{ book.id }}/metadata", {})
+        .done(function () { location.reload(); });
+    };
 </script>
 {% endblock %}
