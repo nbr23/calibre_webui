@@ -1,5 +1,5 @@
 import subprocess
-from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy import create_engine, Table, MetaData, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression
 from sqlalchemy.ext.compiler import compiles
@@ -279,6 +279,7 @@ class CalibreDBW:
                     meta, autoload=True)
             authors = Table('authors', meta, autoload=True)
             comments = Table('comments', meta, autoload=True)
+            identifiers = Table('identifiers', meta, autoload=True)
 
             author = select([group_concat(authors.c.name, ';')])\
                     .select_from(authors.join(books_authors_link,
@@ -288,9 +289,13 @@ class CalibreDBW:
             comment = select([comments.c.text])\
                     .where(comments.c.book == book_id).label('comments')
 
+            isbn = select([identifiers.c.val])\
+                    .where(and_(identifiers.c.book == book_id,
+                        identifiers.c.type == 'isbn')).label('isbn')
+
             stm = select([books.c.title, books.c.path, books.c.pubdate,
                         books.c.has_cover, books.c.id, books.c.has_cover,
-                        author, comment])\
+                        author, comment, isbn])\
                     .where(books.c.id == book_id)
             return con.execute(stm).first()
 
