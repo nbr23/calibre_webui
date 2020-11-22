@@ -15,6 +15,8 @@ WORKDIR /var/www/calibre_webui
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY ./run_app.sh calibre_webui.cfg calibre_webui.ini calibre_webui.py ./
+COPY ./calibre_webui ./calibre_webui
+COPY ./calibre_wrapper ./calibre_wrapper
 
 CMD /var/www/calibre_webui/run_app.sh
