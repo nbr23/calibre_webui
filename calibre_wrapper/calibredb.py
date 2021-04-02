@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, Table, MetaData, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.engine import RowProxy
+from sqlalchemy.engine import LegacyRow
 from threading import Thread
 from tempfile import NamedTemporaryFile
 import os
@@ -255,7 +255,7 @@ class CalibreDBW:
     def resultproxy_to_dict(result):
         if not result:
             return {}
-        if isinstance(result, RowProxy):
+        if isinstance(result, LegacyRow):
             return {field: result[field] for field in result.keys()}
         res = []
         for row in result:
@@ -311,7 +311,7 @@ class CalibreDBW:
                         identifiers.c.type == 'isbn')).label('isbn')
 
             stm = select([books.c.title, books.c.path, books.c.pubdate,
-                        books.c.has_cover, books.c.id, books.c.has_cover,
+                        books.c.has_cover, books.c.id,
                         author, comment, isbn])\
                     .where(books.c.id == book_id)
             return con.execute(stm).first()
