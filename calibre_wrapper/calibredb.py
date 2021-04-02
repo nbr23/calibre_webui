@@ -274,9 +274,9 @@ class CalibreDBW:
             for attr in con.execute(stm).fetchall():
                 stm = select([books_attr_link])\
                         .where(getattr(books_attr_link.c,
-                            attr_link_column) == attr.id).count()
+                            attr_link_column) == attr.id)
                 attr_list.append({'name': getattr(attr, attr_column),
-                    'count': con.execute(stm).first()[0]})
+                    'count': len(con.execute(stm).fetchall())})
         return attr_list
 
     def list_tags(self):
