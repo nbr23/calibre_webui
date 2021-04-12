@@ -39,9 +39,6 @@ location / {
 }
 ```
 
-The static files (in /calibre-webui/static) should be served through your
-httpd.
-
 ### systemd
 
 Finally, you may want to run calibre-webui using systemd. More information is
@@ -62,8 +59,6 @@ It is required to set at least the following variables:
 - `CALIBRE_LIBRARY_PATH`: Set to the path of an existing Calibre library. The
   directory *must* contain the metadata.db file
 - `APP_SECRET_KEY`: to a random string
-- `STATIC_URL`: to the url where your static files are hosted (jquery,
-  bootstrap)
 
 Docker
 ------
@@ -75,8 +70,6 @@ For ease of use, calibre_webui can be deployed using docker.
 Create your local `calibre_webui.cfg` file setting at least:
 
 - `APP_SECRET_KEY`: to a random string
-- `STATIC_URL`: to the url where your static files are hosted (jquery,
-  bootstrap)
 
 The variables `CALIBRE_LIBRARY_PATH`, `CALIBRE_TEMP_DIR`,
 `CALIBRE_WEBUI_DB_PATH` defaults have been preset for Docker use.

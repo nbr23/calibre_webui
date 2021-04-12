@@ -54,10 +54,18 @@ def clear_tasks():
     return jsonify({})
 
 # File serving
-@app.endpoint('static')
-def static(filename):
-    static_url = app.config['STATIC_URL']
-    return redirect(urljoin(static_url, filename))
+
+@app.route('/js/<path:path>')
+def static_js(path):
+    return send_from_directory('static/js', path)
+
+@app.route('/css/<path:path>')
+def static_css(path):
+    return send_from_directory('static/css', path)
+
+@app.route('/img/<path:path>')
+def static_img(path):
+    return send_from_directory('static/img', path)
 
 ## Views ##
 
