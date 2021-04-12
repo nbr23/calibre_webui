@@ -25,8 +25,5 @@ AUTOCONVERT = {
 # Directory to temporarily store uploaded or converted files
 CALIBRE_TEMP_DIR = '/data/tmp'
 
-# Base url for static files
-STATIC_URL = 'https://cdn.example.com/'
-
 # Path to store the internal calibre webui database
 CALIBRE_WEBUI_DB_PATH = '/data/calibre_library'
