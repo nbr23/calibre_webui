@@ -265,8 +265,13 @@ def upload():
             tmp_dir = app.config['CALIBRE_TEMP_DIR']
             tmp_file = os.path.join(tmp_dir,  secure_filename(book_file.filename))
             book_file.save(tmp_file)
-            if app.calibredb_wrap.add_book(tmp_file) == 0:
+            rc, book_id = app.calibredb_wrap.add_book(tmp_file)
+            if rc == 0:
                 flash_success('%s uploaded and added to library' % book_file.filename)
+                if ext[-1].upper() in app.config['AUTOCONVERT']:
+                   app.calibredb_wrap.convert_book(book_id,
+                                                   ext[-1].upper(),
+                                                   app.config['AUTOCONVERT'][ext[-1].upper()])
             else:
                 flash_error('Could not add %s to library' % book_file.filename)
             os.remove(tmp_file)

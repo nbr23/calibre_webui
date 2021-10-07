@@ -17,6 +17,11 @@ CALIBRE_EXT_CONV = ['PDF', 'EPUB', 'MOBI', 'AZW3', 'DOCX', 'RTF', 'FB22',
 # Target format to favor when converting a book
 FORMAT_PREFERRED = 'MOBI'
 
+# Auto conversion table
+AUTOCONVERT = {
+        'EPUB': 'MOBI' # Automatically convert EPUB to MOBI upon upload
+}
+
 # Directory to temporarily store uploaded or converted files
 CALIBRE_TEMP_DIR = '/data/tmp'
 

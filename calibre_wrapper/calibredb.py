@@ -6,9 +6,12 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.engine import LegacyRow
 from threading import Thread
 from tempfile import NamedTemporaryFile
+import re
 import os
 import uuid
 from . import logdb
+
+RE_ADDED_BOOK_ID = re.compile(r"^Added book ids: ([0-9]+)$")
 
 class group_concat(expression.FunctionElement):
     name = "group_concat"
@@ -31,8 +34,14 @@ class CalibreDBW:
         self.clear_tasks()
 
     def add_book(self, file_path):
-        return subprocess.run(['calibredb', 'add', '-d', file_path,
-            '--library-path', self._calibre_lib_dir]).returncode
+        book_id = -1
+        res = subprocess.run(['calibredb', 'add', '-d', file_path,
+            '--library-path', self._calibre_lib_dir], capture_output=True)
+        for line in res.stdout.decode().split('\n'):
+            m = re.match(RE_ADDED_BOOK_ID, line)
+            if m:
+                book_id = m.group(1)
+        return res.returncode, book_id
 
     def add_format(self, book_id, file_path):
         return subprocess.run(['calibredb', 'add_format',
