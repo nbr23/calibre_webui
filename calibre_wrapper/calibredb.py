@@ -12,6 +12,7 @@ import uuid
 from . import logdb
 
 RE_ADDED_BOOK_ID = re.compile(r"^Added book ids: ([0-9]+)$")
+RE_CALIBRE_VERSION = re.compile(r".*calibre ([0-9.]+).*")
 
 class group_concat(expression.FunctionElement):
     name = "group_concat"
@@ -270,6 +271,12 @@ class CalibreDBW:
         for row in result:
             res.append({field: row[field] for field in row.keys()})
         return res
+
+    @staticmethod
+    def get_calibre_version():
+        res = subprocess.run(['calibre', '--version'], capture_output=True)
+        m = re.match(RE_CALIBRE_VERSION, res.stdout.decode().replace("\n", ""))
+        return m.group(1)
 
     def list_books_attributes(self, attr_table, attr_link_column, attr_column):
         attr_list = []

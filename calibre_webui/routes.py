@@ -76,7 +76,7 @@ def index():
     scope = request.args.get('search_scope').strip() \
             if 'search_scope' in request.args else None
     return render_template('index.html', search=search,
-            scope=scope, title='My Books')
+            scope=scope, title='My Books', calibre_version=CalibreDBW.get_calibre_version())
 
 # Device Management
 @app.route('/devices/list')
@@ -84,7 +84,7 @@ def device_list():
     devices = app.database.list_devices()
     url = urljoin(request.host_url, url_for('device_register'))
     return render_template('device_list.html', deviceslist=devices,
-            url=url, title='Devices')
+            url=url, title='Devices', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/devices/save', methods=['POST'])
 def device_save():
@@ -110,7 +110,7 @@ def device_edit(device_id):
     if not device:
         device = app.database.generate_device(device_id)
     return render_template('activate_device.html', device=device,
-            title='Activate Device')
+            title='Activate Device', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/devices/delete/<device_id>')
 def device_delete(device_id):
@@ -128,7 +128,7 @@ def device_register():
     uid = app.database.get_new_uid()
     activate_url = '%sdevices/edit/%s' % (request.host_url, uid)
     return render_template('register_device.html', activate_url=activate_url,
-            device_id=uid, title='New Device')
+            device_id=uid, title='New Device', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/feeds/<device_id>')
 @app.route('/feeds/<device_id>/<int:page>')
@@ -139,7 +139,7 @@ def device_feed(device_id, page=1):
     book_format = device.formats.upper()
     books = app.calibredb_wrap.books_by_format(book_format, page=page)
     return render_template('feed.html', books=books, title=device.name,
-            book_format=book_format, page=page, device_id=device_id)
+            book_format=book_format, page=page, device_id=device_id, calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/feeds/<device_id>/books/<int:book_id>/file/<book_format>/')
 def device_feed_download_book_file(device_id, book_id, book_format):
@@ -160,25 +160,25 @@ def device_feed_get_cover(device_id, book_id):
 def list_tasks():
     tasks = app.calibredb_wrap.list_tasks()
     return render_template('tasklist.html', tasklist=tasks,
-            title='Tasks list')
+            title='Tasks list', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/authors')
 def list_authors():
     authors = app.calibredb_wrap.list_authors()
     return render_template('list.html', itemlist=authors,
-            title='Authors list', scope='authors')
+            title='Authors list', scope='authors', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/tags')
 def list_tags():
     tags = app.calibredb_wrap.list_tags()
     return render_template('list.html', itemlist=tags,
-            title='Tags list', scope='tags')
+            title='Tags list', scope='tags', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/series')
 def list_series():
     series = app.calibredb_wrap.list_series()
     return render_template('list.html', itemlist=series,
-            title='Series list', scope='series')
+            title='Series list', scope='series', calibre_version=CalibreDBW.get_calibre_version())
 
 # Books
 @app.route('/books/<int:book_id>/edit', methods=['GET', 'POST'])
@@ -192,7 +192,8 @@ def book_edit(book_id):
             book=book,
             formats=book_formats,
             formats_to=app.config['CALIBRE_EXT_CONV'],
-            preferred=app.config['FORMAT_PREFERRED'])
+            preferred=app.config['FORMAT_PREFERRED'],
+            calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/books/<int:book_id>/metadata', methods=['POST'])
 def book_refresh_metadata(book_id):

@@ -58,6 +58,9 @@
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('device_list') }}">Devices</a>
             </li>
+            <li class="nav-item">
+              <span class="nav-link"><em>powered by Calibre {{ calibre_version }}</em></span>
+            </li>
           </ul>
           <form class="form-inline mr-4" method="GET" action="{{ url_for('index') }}">
             <div class="input-group">
