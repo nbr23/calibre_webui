@@ -310,6 +310,6 @@ def get_cover(book_id):
 def download_book_file(book_id, book_format):
     fpath, fname = app.calibredb_wrap.get_book_file(book_id,
             book_format.upper())
-    return send_from_directory(fpath, fname, conditional=True, attachment_filename=fname, as_attachment=True)
+    return send_from_directory(fpath, fname, conditional=True, download_name=fname, as_attachment=True)
 
 
