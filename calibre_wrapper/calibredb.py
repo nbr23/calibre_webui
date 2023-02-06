@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, Table, MetaData, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.engine import LegacyRow
 from threading import Thread
 from tempfile import NamedTemporaryFile
 import re
@@ -262,17 +261,6 @@ class CalibreDBW:
                 return con.execute(stm).fetchall()
 
     @staticmethod
-    def resultproxy_to_dict(result):
-        if not result:
-            return {}
-        if isinstance(result, LegacyRow):
-            return {field: result[field] for field in result.keys()}
-        res = []
-        for row in result:
-            res.append({field: row[field] for field in row.keys()})
-        return res
-
-    @staticmethod
     def get_calibre_version():
         res = subprocess.run(['calibre', '--version'], capture_output=True)
         m = re.match(RE_CALIBRE_VERSION, res.stdout.decode().replace("\n", ""))
@@ -349,8 +337,8 @@ class CalibreDBW:
                             attribute_link_name) == attributes.c.id))\
                         .where(books_attributes_link.c.book == book_id)
             if first:
-                return self.resultproxy_to_dict(con.execute(stm).first())
-            return self.resultproxy_to_dict(con.execute(stm).fetchall())
+                return dict(con.execute(stm).first())
+            return [dict(r) for r in con.execute(stm).fetchall()]
 
     def get_book_tags(self, book_id):
         return self.get_book_attributes(book_id, 'tags', 'name', 'tag')
@@ -368,7 +356,7 @@ class CalibreDBW:
                 'lang_code')
 
     def get_book_details(self, book_id):
-        book, formats = self.resultproxy_to_dict(self.get_book(book_id)), None
+        book, formats = dict(self.get_book(book_id)), None
         if book:
             book['tags'] = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
             book['publisher'] = ', '.join([pub['name']
