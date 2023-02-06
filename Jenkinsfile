@@ -20,7 +20,7 @@ pipeline {
             steps {
                 sh '''
                     BUILDER=`docker buildx create --use`
-                    docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t nbr23/calibre_webui:latest --push .
+                    docker buildx build --platform linux/arm64 -t nbr23/calibre_webui:latest --push .
                     docker buildx rm $BUILDER
                     '''
             }

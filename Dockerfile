@@ -1,4 +1,4 @@
-FROM ubuntu:rolling
+FROM ubuntu:22.04
 
 EXPOSE 8000
 ARG CALIBRE_UID=112

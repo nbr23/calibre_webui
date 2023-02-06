@@ -33,7 +33,7 @@ def get_books():
             page=page)
     if not books:
         return jsonify([])
-    return jsonify(app.calibredb_wrap.resultproxy_to_dict(books))
+    return jsonify([dict(book) for book in books])
 
 @app.route('/api/books/<int:book_id>/formats')
 def get_book_formats(book_id):

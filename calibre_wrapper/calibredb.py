@@ -336,9 +336,15 @@ class CalibreDBW:
                         getattr(books_attributes_link.c,
                             attribute_link_name) == attributes.c.id))\
                         .where(books_attributes_link.c.book == book_id)
+            res = con.execute(stm)
+
+            print(res)
+            if res is None:
+                return {} if first else []
             if first:
-                return dict(con.execute(stm).first())
-            return [dict(r) for r in con.execute(stm).fetchall()]
+                return dict(res.first())
+
+            return [dict(r) for r in res.fetchall()]
 
     def get_book_tags(self, book_id):
         return self.get_book_attributes(book_id, 'tags', 'name', 'tag')
