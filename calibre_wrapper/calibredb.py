@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Table, MetaData, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.engine import Row
 from threading import Thread
 from tempfile import NamedTemporaryFile
 import re
@@ -31,6 +32,7 @@ class CalibreDBW:
         self._calibre_lib_dir = self._config['CALIBRE_LIBRARY_PATH']
         self._calibre_db = os.path.join(self._calibre_lib_dir, 'metadata.db')
         self._db_ng = create_engine('sqlite:///%s' % self._calibre_db)
+        self._session = sessionmaker(self._db_ng)
         self.clear_tasks()
 
     def add_book(self, file_path):
@@ -131,19 +133,19 @@ class CalibreDBW:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
     def search_books_tags(self, search, page=1, limit=30):
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            books = Table('books', meta, autoload=True)
+        with self._session() as session:
+            meta = MetaData()
+            books = Table('books', meta, autoload_with=self._db_ng)
             books_authors_link = Table('books_authors_link',
-                    meta, autoload=True)
-            authors = Table('authors', meta, autoload=True)
+                    meta, autoload_with=self._db_ng)
+            authors = Table('authors', meta, autoload_with=self._db_ng)
             books_tags_link = Table('books_tags_link',
-                    meta, autoload=True)
-            tags = Table('tags', meta, autoload=True)
+                    meta, autoload_with=self._db_ng)
+            tags = Table('tags', meta, autoload_with=self._db_ng)
 
-            stm = select([books.c.title, books.c.has_cover,
+            stm = select(books.c.title, books.c.has_cover,
                 books.c.id,
-                authors.c.name.label('authors')])\
+                authors.c.name.label('authors'))\
                         .select_from(books.join(books_authors_link,
                             books_authors_link.c.book == books.c.id)\
                         .join(authors,
@@ -156,22 +158,22 @@ class CalibreDBW:
                         .order_by(books.c.last_modified.desc())\
                         .limit(limit)\
                         .offset((page - 1) * limit)
-            return con.execute(stm).fetchall()
+            return self.resultproxy_to_dict(session.execute(stm).all())
 
     def search_books_series(self, search, page=1, limit=30):
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            books = Table('books', meta, autoload=True)
+        with self._session() as session:
+            meta = MetaData()
+            books = Table('books', meta, autoload_with=self._db_ng)
             books_authors_link = Table('books_authors_link',
-                    meta, autoload=True)
-            authors = Table('authors', meta, autoload=True)
+                    meta, autoload_with=self._db_ng)
+            authors = Table('authors', meta, autoload_with=self._db_ng)
             books_series_link = Table('books_series_link',
-                    meta, autoload=True)
-            series = Table('series', meta, autoload=True)
+                    meta, autoload_with=self._db_ng)
+            series = Table('series', meta, autoload_with=self._db_ng)
 
-            stm = select([books.c.title, books.c.has_cover,
+            stm = select(books.c.title, books.c.has_cover,
                 books.c.id,
-                authors.c.name.label('authors')])\
+                authors.c.name.label('authors'))\
                         .select_from(books.join(books_authors_link,
                             books_authors_link.c.book == books.c.id)\
                         .join(authors,
@@ -184,19 +186,19 @@ class CalibreDBW:
                         .order_by(books.c.last_modified.desc())\
                         .limit(limit)\
                         .offset((page - 1) * limit)
-            return con.execute(stm).fetchall()
+            return self.resultproxy_to_dict(session.execute(stm).all())
 
     def search_books_authors(self, search, page=1, limit=30):
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            books = Table('books', meta, autoload=True)
+        with self._session() as session:
+            meta = MetaData()
+            books = Table('books', meta, autoload_with=self._db_ng)
             books_authors_link = Table('books_authors_link',
-                    meta, autoload=True)
-            authors = Table('authors', meta, autoload=True)
+                    meta, autoload_with=self._db_ng)
+            authors = Table('authors', meta, autoload_with=self._db_ng)
 
-            stm = select([books.c.title, books.c.has_cover,
+            stm = select(books.c.title, books.c.has_cover,
                 books.c.id,
-                authors.c.name.label('authors')])\
+                authors.c.name.label('authors'))\
                         .select_from(books.join(books_authors_link,
                             books_authors_link.c.book == books.c.id)\
                         .join(authors,
@@ -205,22 +207,22 @@ class CalibreDBW:
                         .order_by(books.c.last_modified.desc())\
                         .limit(limit)\
                         .offset((page - 1) * limit)
-            return con.execute(stm).fetchall()
+            return self.resultproxy_to_dict(session.execute(stm).all())
 
 
     def books_by_format(self, book_format, page=1, limit=30):
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            books = Table('books', meta, autoload=True)
-            data = Table('Data', meta, autoload=True)
-            stm = select([books.c.title, books.c.has_cover,
-                        books.c.id, data.c.format])\
+        with self._session() as session:
+            meta = MetaData()
+            books = Table('books', meta, autoload_with=self._db_ng)
+            data = Table('Data', meta, autoload_with=self._db_ng)
+            stm = select(books.c.title, books.c.has_cover,
+                        books.c.id, data.c.format)\
                         .select_from(books.join(data, data.c.book == books.c.id))\
                         .where(data.c.format == book_format.upper())\
                         .order_by(books.c.last_modified.desc())\
                         .limit(limit)\
                         .offset((page - 1) * limit)
-            return con.execute(stm).fetchall()
+            return self.resultproxy_to_dict(session.execute(stm).all())
 
     def search_books(self, search, attribute, page=1, limit=30):
         if attribute and attribute in ['authors', 'series', 'tags'] and search:
@@ -231,14 +233,14 @@ class CalibreDBW:
             elif attribute == 'tags':
                 return self.search_books_tags(search, page, limit)
         else:
-            with self._db_ng.connect() as con:
-                meta = MetaData(self._db_ng)
-                books = Table('books', meta, autoload=True)
+            with self._session() as session:
+                meta = MetaData()
+                books = Table('books', meta, autoload_with=self._db_ng)
                 books_authors_link = Table('books_authors_link',
-                        meta, autoload=True)
-                authors = Table('authors', meta, autoload=True)
+                        meta, autoload_with=self._db_ng)
+                authors = Table('authors', meta, autoload_with=self._db_ng)
                 stm = None
-                author = select([group_concat(authors.c.name, ';')])\
+                author = select(group_concat(authors.c.name, ';'))\
                         .select_from(authors.join(books_authors_link,
                             books_authors_link.c.author == authors.c.id))\
                             .where(books_authors_link.c.book == books.c.id)\
@@ -252,13 +254,24 @@ class CalibreDBW:
                         .limit(limit)\
                         .offset((page - 1) * limit)
                 else:
-                    stm = select([books.c.title, books.c.has_cover,
+                    stm = select(books.c.title, books.c.has_cover,
                         books.c.id,
-                        author])\
+                        author)\
                         .order_by(books.c.last_modified.desc())\
                         .limit(limit)\
                         .offset((page - 1) * limit)
-                return con.execute(stm).fetchall()
+                return self.resultproxy_to_dict(session.execute(stm).all())
+
+    @staticmethod
+    def resultproxy_to_dict(result):
+        if not result:
+            return {}
+        if isinstance(result, Row):
+            return {field: getattr(result, field) for field in result._fields}
+        res = []
+        for row in result:
+            res.append(CalibreDBW.resultproxy_to_dict(row))
+        return res
 
     @staticmethod
     def get_calibre_version():
@@ -266,85 +279,83 @@ class CalibreDBW:
         m = re.match(RE_CALIBRE_VERSION, res.stdout.decode().replace("\n", ""))
         return m.group(1)
 
-    def list_books_attributes(self, attr_table, attr_link_column, attr_column):
+    def list_books_attributes(self, attr_table, attr_link_column):
         attr_list = []
-        meta = MetaData(self._db_ng)
-        a_table = Table(attr_table, meta, autoload=True)
-        books_attr_link = Table('books_%s_link' % attr_table, meta,
-                autoload=True)
+        meta = MetaData()
+        a_table = Table(attr_table, meta, autoload_with=self._db_ng)
+        books_attr_link = Table('books_%s_link' % attr_table, meta, autoload_with=self._db_ng)
 
-        with self._db_ng.connect() as con:
-            stm = select([a_table]).order_by(getattr(a_table.c, attr_column))
-            for attr in con.execute(stm).fetchall():
-                stm = select([books_attr_link])\
+        with self._session() as session:
+            stm = select(a_table).order_by(a_table.c.name)
+            for attr in session.execute(stm).fetchall():
+                stm = select(books_attr_link)\
                         .where(getattr(books_attr_link.c,
                             attr_link_column) == attr.id)
-                attr_list.append({'name': getattr(attr, attr_column),
-                    'count': len(con.execute(stm).fetchall())})
+                attr_list.append({'name': attr.name,
+                    'count': len(con.execute(stm).all())})
         return attr_list
 
     def list_tags(self):
-        return self.list_books_attributes('tags', 'tag', 'name')
+        return self.list_books_attributes('tags', 'tag')
 
     def list_series(self):
-        return self.list_books_attributes('series', 'series', 'name')
+        return self.list_books_attributes('series', 'series')
 
     def list_authors(self):
-        return self.list_books_attributes('authors', 'author', 'name')
+        return self.list_books_attributes('authors', 'author')
 
     def get_book(self, book_id):
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            books = Table('Books', meta, autoload=True)
+        with self._session() as session:
+            meta = MetaData()
+            books = Table('Books', meta, autoload_with=self._db_ng)
             books_authors_link = Table('books_authors_link',
-                    meta, autoload=True)
-            authors = Table('authors', meta, autoload=True)
-            comments = Table('comments', meta, autoload=True)
-            identifiers = Table('identifiers', meta, autoload=True)
+                    meta, autoload_with=self._db_ng)
+            authors = Table('authors', meta, autoload_with=self._db_ng)
+            comments = Table('comments', meta, autoload_with=self._db_ng)
+            identifiers = Table('identifiers', meta, autoload_with=self._db_ng)
 
-            author = select([group_concat(authors.c.name, ';')])\
+            author = select(group_concat(authors.c.name, ';'))\
                     .select_from(authors.join(books_authors_link,
                         books_authors_link.c.author == authors.c.id))\
                     .where(books_authors_link.c.book == books.c.id)\
                     .label('authors')
-            comment = select([comments.c.text])\
+            comment = select(comments.c.text)\
                     .where(comments.c.book == book_id).label('comments')
 
-            isbn = select([identifiers.c.val])\
+            isbn = select(identifiers.c.val)\
                     .where(and_(identifiers.c.book == book_id,
                         identifiers.c.type == 'isbn')).label('isbn')
 
-            stm = select([books.c.title, books.c.path, books.c.pubdate,
+            stm = select(books.c.title, books.c.path, books.c.pubdate,
                         books.c.has_cover, books.c.id,
-                        author, comment, isbn])\
+                        author, comment, isbn)\
                     .where(books.c.id == book_id)
-            return con.execute(stm).first()
+            return session.execute(stm).first()
 
     def get_book_attributes(self, book_id, attribute_table_name,
                             attribute_column_name,
                             attribute_link_name,
                             first=False):
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
+        with self._session() as session:
+            meta = MetaData()
             books_attributes_link = Table('books_%s_link'
                     % attribute_table_name,
-                    meta, autoload=True)
-            attributes = Table(attribute_table_name, meta, autoload=True)
+                    meta, autoload_with=self._db_ng)
+            attributes = Table(attribute_table_name, meta, autoload_with=self._db_ng)
 
-            stm = select([getattr(attributes.c, attribute_column_name)])\
+            stm = select(getattr(attributes.c, attribute_column_name))\
                     .select_from( attributes.join(books_attributes_link,
                         getattr(books_attributes_link.c,
                             attribute_link_name) == attributes.c.id))\
                         .where(books_attributes_link.c.book == book_id)
-            res = con.execute(stm)
+            res = session.execute(stm)
 
-            print(res)
             if res is None:
                 return {} if first else []
             if first:
-                return dict(res.first())
+                return self.resultproxy_to_dict(res.first())
 
-            return [dict(r) for r in res.fetchall()]
+            return self.resultproxy_to_dict(res.all())
 
     def get_book_tags(self, book_id):
         return self.get_book_attributes(book_id, 'tags', 'name', 'tag')
@@ -362,7 +373,7 @@ class CalibreDBW:
                 'lang_code')
 
     def get_book_details(self, book_id):
-        book, formats = dict(self.get_book(book_id)), None
+        book, formats = self.resultproxy_to_dict(self.get_book(book_id)), None
         if book:
             book['tags'] = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
             book['publisher'] = ', '.join([pub['name']
@@ -377,30 +388,30 @@ class CalibreDBW:
 
     def get_book_formats(self, book_id):
         formats = []
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            data = Table('Data', meta, autoload=True)
-            stm = select([data]).where(data.c.book == book_id)
-            for book_format in con.execute(stm).fetchall():
+        with self._session() as session:
+            meta = MetaData()
+            data = Table('Data', meta, autoload_with=self._db_ng)
+            stm = select(data).where(data.c.book == book_id)
+            for book_format in session.execute(stm).fetchall():
                 formats.append({'format': book_format.format,
                     'size': '%.2f' % (
                         book_format.uncompressed_size / (1024*1024))})
             return formats
 
     def get_book_title(self, book_id):
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            books = Table('Books', meta, autoload=True)
-            stm = select([books.c.title]).where(books.c.id == book_id)
-            return con.execute(stm).first().title
+        with self._session() as session:
+            meta = MetaData()
+            books = Table('Books', meta, autoload_with=self._db_ng)
+            stm = select(books.c.title).where(books.c.id == book_id)
+            return session.execute(stm).first().title
 
     def get_book_file(self, book_id, book_format):
         book_path = self.get_book(book_id).path
-        with self._db_ng.connect() as con:
-            meta = MetaData(self._db_ng)
-            data = Table('Data', meta, autoload=True)
-            stm = select([data]).where(data.c.book == book_id)
-            for fmt in con.execute(stm).fetchall():
+        with self._session() as session:
+            meta = MetaData()
+            data = Table('Data', meta, autoload_with=self._db_ng)
+            stm = select(data).where(data.c.book == book_id)
+            for fmt in session.execute(stm).fetchall():
                 if fmt.format == book_format:
                     filename = '%s.%s' % (fmt.name, book_format.lower())
                     filepath = os.path.join(self._calibre_lib_dir, book_path)
