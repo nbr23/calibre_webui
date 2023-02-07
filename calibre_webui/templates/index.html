@@ -5,56 +5,58 @@
 {% endblock %}
 
 {% block body %}
-<center><h2>{{title}}</h2></center><br/>
+<center>
+  <h2>{{title}}</h2>
+</center><br />
 <div class="row justify-content-md-center" id="books_list">
 </div>
 <div class="row justify-content-md-center">
   <div class="text-center">
-  <button style="margin-bottom: 10px;" onclick="load_more_books();" class="btn btn-info" id="load_more">Load more</button>
+    <button style="margin-bottom: 10px;" onclick="load_more_books();" class="btn btn-info" id="load_more">Load
+      more</button>
   </div>
 </div>
 {% endblock %}
 {% block javascript %}
-  <script type="text/javascript">
-    var trim_str = function(str, max=50) { return str.length > max ? str.substring(0, max - 3) + '…' : str;}
-var page = 1;
-var load_more_books = function() {
-  $.getJSON('{{url_for("get_books")}}?page='
-    + page {% if search %}+'&search={{ search }}'{% endif %}{% if scope %}
-    +'&search_scope={{ scope }}'{% endif %}, function (data) {
-      if (data.length == 0) {
-        $("#load_more").hide();
-        return 0;
+<script type="text/javascript">
+  var trim_str = function (str, max = 50) { return str.length > max ? str.substring(0, max - 3) + '…' : str; }
+  var page = 1;
+  var load_more_books = function () {
+    $.getJSON('{{url_for("get_books")}}?page='
+      + page {% if search %} + '&search={{ search }}'{% endif %}{% if scope %}
+  +'&search_scope={{ scope }}'{% endif %}, function (data) {
+    if (data.length == 0) {
+      $("#load_more").hide();
+      return 0;
+    }
+    books_list = $('#books_list').html();
+    for (i = 0; i < data.length; i++) {
+      authors = [];
+      authors_split = data[i]['authors'].split(';');
+      for (k = 0; k < authors_split.length; k++) {
+        authors.push('<a style="color: #00aaaa; font-size: 90%;" href="{{ url_for('index')}}?search=' + authors_split[k] + '&scope=authors">' + authors_split[k] + '</a>');
       }
-      books_list = $('#books_list').html();
-      for (i = 0; i < data.length; i++)
-      {
-        authors = [];
-        authors_split = data[i]['authors'].split(';');
-        for (k = 0; k < authors_split.length; k++){
-          authors.push('<a style="color: #00aaaa; font-size: 90%;" href="{{ url_for('index')}}?search=' + authors_split[k] + '">' + authors_split[k] + '</a>');
-        }
-        authors = authors.join(' - ');
-        books_list += '<div class="col-sm-3 col-lg-2 col-xs-6 ">' +
-          '<a href="/books/' + data[i]['id'] + '/edit">' +
-          '<img class="cover mx-auto d-block" src="/books/' + data[i]['id'] + '/cover"/>' +
-          '</a><br/>' +
-          '<center>' +
-          '<p><a style="color: #000000; font-size: 100%;" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a></br>' +
-          authors + '</p>' +
-          '</center>' +
-          '</div>';
-      }
-      $("#books_list").html(books_list);
-      page += 1;
-      });
+      authors = authors.join(' - ');
+      books_list += '<div class="col-sm-3 col-lg-2 col-xs-6 ">' +
+        '<a href="/books/' + data[i]['id'] + '/edit">' +
+        '<img class="cover mx-auto d-block" src="/books/' + data[i]['id'] + '/cover"/>' +
+        '</a><br/>' +
+        '<center>' +
+        '<p><a style="color: #000000; font-size: 100%;" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a></br>' +
+        authors + '</p>' +
+        '</center>' +
+        '</div>';
+    }
+    $("#books_list").html(books_list);
+    page += 1;
+  });
     };
 
-    $(window).on('scroll', function(){
-      if($(window).scrollTop() >= $(document).height() - $(window).height() ) {
-        load_more_books();
-      }
-    }).scroll();
+  $(window).on('scroll', function () {
+    if ($(window).scrollTop() >= $(document).height() - $(window).height()) {
+      load_more_books();
+    }
+  }).scroll();
 
-  </script>
+</script>
 {% endblock %}
