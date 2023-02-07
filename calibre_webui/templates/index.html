@@ -34,7 +34,7 @@
       authors = [];
       authors_split = data[i]['authors'].split(';');
       for (k = 0; k < authors_split.length; k++) {
-        authors.push('<a style="color: #00aaaa; font-size: 90%;" href="{{ url_for('index')}}?search=' + authors_split[k] + '&scope=authors">' + authors_split[k] + '</a>');
+        authors.push('<a style="color: #00aaaa; font-size: 90%;" href="{{ url_for('index')}}?search=' + authors_split[k] + '&search_scope=authors">' + authors_split[k] + '</a>');
       }
       authors = authors.join(' - ');
       books_list += '<div class="col-sm-3 col-lg-2 col-xs-6 ">' +
