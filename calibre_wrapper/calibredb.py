@@ -292,7 +292,7 @@ class CalibreDBW:
                         .where(getattr(books_attr_link.c,
                             attr_link_column) == attr.id)
                 attr_list.append({'name': attr.name,
-                    'count': len(con.execute(stm).all())})
+                    'count': len(session.execute(stm).all())})
         return attr_list
 
     def list_tags(self):
