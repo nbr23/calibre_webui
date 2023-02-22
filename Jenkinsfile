@@ -25,6 +25,12 @@ pipeline {
                     '''
             }
         }
+        stage('Sync github repos') {
+            when { branch 'master' }
+            steps {
+                syncRemoteBranch('git@github.com:nbr23/calibre_webui.git', 'master')
+            }
+        }
     }
 
     post {
