@@ -246,8 +246,8 @@ class CalibreDBW:
                             .where(books_authors_link.c.book == books.c.id)\
                             .label('authors')
                 if search:
-                    stm = select([books.c.title, books.c.has_cover,
-                        books.c.id, author])\
+                    stm = select(books.c.title, books.c.has_cover,
+                        books.c.id, author)\
                         .where(books.c.title.ilike('%%%s%%' % search) |
                                 author.ilike('%%%s%%' % search))\
                         .order_by(books.c.last_modified.desc())\
