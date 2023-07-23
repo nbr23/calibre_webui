@@ -20,6 +20,10 @@
         <label class="col-form-label col-sm-2" for="device_formats">Supported Formats</label>
         <input type="text" class="form-control col-sm-10" name="device_formats" id="device_formats" value="{{device.formats}}">
       </div>
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="book_tags_filters">Book tag filters (coma separated, don't filter if empty)</label>
+        <input type="text" class="form-control col-sm-10" name="book_tags_filters" id="book_tags_filters" value="{{device.book_tags_filters}}">
+      </div>
       <div class="text-center"><button type="submit" class="btn btn-primary">Save and Activate</button></div>
     </form>
   </div>

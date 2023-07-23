@@ -94,11 +94,12 @@ def device_save():
         uid = request.form.get('device_id')
         name = request.form.get('device_name')
         formats = request.form.get('device_formats')
+        book_tags_filters = request.form.get('book_tags_filters', '')
         device = app.database.get_device(uid=uid)
         if not device:
-            app.database.add_device(uid=uid, name=name, formats=formats)
+            app.database.add_device(uid=uid, name=name, formats=formats, book_tags_filters=book_tags_filters)
         else:
-            app.database.update_device(uid=uid, name=name, formats=formats)
+            app.database.update_device(uid=uid, name=name, formats=formats, book_tags_filters=book_tags_filters)
         flash_success('Device %s saved!' % name)
     else:
         flash_error('Couldn\'t save device')
@@ -137,7 +138,7 @@ def device_feed(device_id, page=1):
     if not device:
         return redirect(url_for("device_register"))
     book_format = device.formats.upper()
-    books = app.calibredb_wrap.books_by_format(book_format, page=page)
+    books = app.calibredb_wrap.books_by_format_and_tags(book_format, tags=device.book_tags_filters, page=page)
     return render_template('feed.html', books=books, title=device.name,
             book_format=book_format, page=page, device_id=device_id, calibre_version=CalibreDBW.get_calibre_version())
 

@@ -224,6 +224,31 @@ class CalibreDBW:
                         .offset((page - 1) * limit)
             return self.resultproxy_to_dict(session.execute(stm).all())
 
+    def books_by_format_and_tags(self, book_format, tags, page=1, limit=30):
+        if not tags or len(tags) == 0:
+            return self.books_by_format(book_format, page, limit)
+        tags = [tag.lower() for tag in tags.split(',')]
+        with self._session() as session:
+            meta = MetaData()
+            books = Table('books', meta, autoload_with=self._db_ng)
+            data = Table('Data', meta, autoload_with=self._db_ng)
+            books_tags_link = Table('books_tags_link',
+                    meta, autoload_with=self._db_ng)
+            tags_table = Table('tags', meta, autoload_with=self._db_ng)
+            stm = select(books.c.title, books.c.has_cover,
+                        books.c.id, data.c.format)\
+                        .select_from(books.join(data, data.c.book == books.c.id)\
+                        .join(books_tags_link,
+                            books_tags_link.c.book == books.c.id)\
+                        .join(tags_table,
+                            books_tags_link.c.tag == tags_table.c.id))\
+                        .where(data.c.format == book_format.upper())\
+                        .where(tags_table.c.name.in_(tags))\
+                        .order_by(books.c.last_modified.desc())\
+                        .limit(limit)\
+                        .offset((page - 1) * limit)
+            return self.resultproxy_to_dict(session.execute(stm).all())
+
     def search_books(self, search, attribute, page=1, limit=30):
         if attribute and attribute in ['authors', 'series', 'tags'] and search:
             if attribute == 'authors':
