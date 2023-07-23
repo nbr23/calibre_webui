@@ -22,7 +22,7 @@
       <tbody>
         {% for device in deviceslist %}
         <tr>
-          <td>{{device.uid}}</td>
+          <td><a href="{{ url_for('device_feed', device_id=device.uid) }}">{{device.uid}}</a></td>
           <td>{{device.name}}</td>
           <td>{{device.formats}}</td>
           <td><a type="button" class="btn btn-success" href="{{ url_for('device_edit', device_id=device.uid) }}">Edit</a></td>
