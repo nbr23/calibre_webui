@@ -338,12 +338,20 @@ class CalibreDBW:
             authors = Table('authors', meta, autoload_with=self._db_ng)
             comments = Table('comments', meta, autoload_with=self._db_ng)
             identifiers = Table('identifiers', meta, autoload_with=self._db_ng)
+            books_series_link = Table('books_series_link',
+                    meta, autoload_with=self._db_ng)
+            series = Table('series', meta, autoload_with=self._db_ng)
 
             author = select(group_concat(authors.c.name, ';'))\
                     .select_from(authors.join(books_authors_link,
                         books_authors_link.c.author == authors.c.id))\
                     .where(books_authors_link.c.book == books.c.id)\
                     .label('authors')
+            series = select(group_concat(series.c.name, ';'))\
+                    .select_from(series.join(books_series_link,
+                        books_series_link.c.series == series.c.id))\
+                    .where(books_series_link.c.book == books.c.id)\
+                    .label('series')
             comment = select(comments.c.text)\
                     .where(comments.c.book == book_id).label('comments')
 
@@ -353,7 +361,7 @@ class CalibreDBW:
 
             stm = select(books.c.title, books.c.path, books.c.pubdate,
                         books.c.has_cover, books.c.id,
-                        author, comment, isbn)\
+                        author, comment, isbn, series)\
                     .where(books.c.id == book_id)
             return session.execute(stm).first()
 
@@ -409,6 +417,7 @@ class CalibreDBW:
             book['rating'] = int(rating / 2) if rating else rating
             formats = self.get_book_formats(book_id)
             book['authors'] = ' & '.join(book['authors'].split(';'))
+            book['series'] = ' & '.join(book['series'].split(';')) if book['series'] else ''
         return (book, formats)
 
     def get_book_formats(self, book_id):
