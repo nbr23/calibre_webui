@@ -347,7 +347,7 @@ class CalibreDBW:
                         books_authors_link.c.author == authors.c.id))\
                     .where(books_authors_link.c.book == books.c.id)\
                     .label('authors')
-            series = select(group_concat(series.c.name, ';'))\
+            series = select(series.c.name)\
                     .select_from(series.join(books_series_link,
                         books_series_link.c.series == series.c.id))\
                     .where(books_series_link.c.book == books.c.id)\
@@ -360,7 +360,7 @@ class CalibreDBW:
                         identifiers.c.type == 'isbn')).label('isbn')
 
             stm = select(books.c.title, books.c.path, books.c.pubdate,
-                        books.c.has_cover, books.c.id,
+                        books.c.has_cover, books.c.id, books.c.series_index,
                         author, comment, isbn, series)\
                     .where(books.c.id == book_id)
             return session.execute(stm).first()

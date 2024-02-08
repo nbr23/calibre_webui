@@ -205,7 +205,7 @@ def book_save(book_id):
     metadata = {}
     book, formats = app.calibredb_wrap.get_book_details(book_id)
     for field in ['title', 'authors', 'publisher', 'comments', 'tags',
-            'languages', 'pubdate', 'series']:
+            'languages', 'pubdate', 'series', 'series_index']:
         if field in request.form and \
                 request.form.get(field) != book[field]:
             metadata[field] = request.form.get(field)
