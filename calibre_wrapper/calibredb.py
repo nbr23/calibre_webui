@@ -181,12 +181,20 @@ class CalibreDBW:
                         case 'series':
                             query = query.where(series.ilike('%%%s%%' % search))
                         case 'tags':
-                            query = query.where(or_(*[tags.contains(search_tag) for search_tag in search.split(',')]))
+                            query = query.where(
+                                or_(*[
+                                    tags.contains(search_tag) for search_tag in search.split(',')
+                                ])
+                            )
                 else:
                     query = query.where(books.c.title.ilike('%%%s%%' % search) |
                             author.ilike('%%%s%%' % search))
-            query = query.order_by(books.c.last_modified.desc())\
-                    .limit(limit)\
+
+            if attribute == 'series':
+                query = query.order_by(books.c.series_index)
+            else :
+                query = query.order_by(books.c.last_modified.desc())
+            query = query.limit(limit)\
                     .offset((page - 1) * limit)
             return self.resultproxy_to_dict(session.execute(query).all())
 
