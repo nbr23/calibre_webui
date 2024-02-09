@@ -18,7 +18,7 @@ FROM ubuntu:22.04
 EXPOSE 8000
 ARG CALIBRE_UID=112
 
-RUN apt update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt -y --no-install-recommends install tzdata calibre sqlite3 python3 zlib1g-dev libjpeg-dev locales
+RUN apt update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt -y --no-install-recommends install tzdata calibre python3 locales
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
