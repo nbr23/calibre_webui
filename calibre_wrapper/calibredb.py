@@ -1,7 +1,7 @@
 import subprocess
 from sqlalchemy import create_engine, Table, MetaData, and_
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select, expression
+from sqlalchemy.sql import select, expression, or_
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.engine import Row
 from threading import Thread
@@ -16,6 +16,14 @@ RE_CALIBRE_VERSION = re.compile(r".*calibre ([0-9.]+).*")
 
 class group_concat(expression.FunctionElement):
     name = "group_concat"
+
+
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread.start()
+        return thread
+    return wrapper
 
 @compiles(group_concat, 'sqlite')
 def group_concat_sqlite(element, compiler, **kw):
@@ -104,13 +112,6 @@ class CalibreDBW:
                 sum(t['status'] == 'COMPLETED' for t in tasks),
             }
 
-    def threaded(fn):
-        def wrapper(*args, **kwargs):
-            thread = Thread(target=fn, args=args, kwargs=kwargs)
-            thread.start()
-            return thread
-        return wrapper
-
     @threaded
     def convert_book(self, book_id, format_from, format_to):
         task_name = 'Convert book « %s » from %s to %s' \
@@ -132,160 +133,62 @@ class CalibreDBW:
         else:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
-    def search_books_tags(self, search, page=1, limit=30):
+    def search_books(self, search, attribute, page=1, limit=30, book_format=None):
         with self._session() as session:
             meta = MetaData()
             books = Table('books', meta, autoload_with=self._db_ng)
+
+            authors_table = Table('authors', meta, autoload_with=self._db_ng)
             books_authors_link = Table('books_authors_link',
                     meta, autoload_with=self._db_ng)
-            authors = Table('authors', meta, autoload_with=self._db_ng)
-            books_tags_link = Table('books_tags_link',
-                    meta, autoload_with=self._db_ng)
-            tags = Table('tags', meta, autoload_with=self._db_ng)
+            author = select(group_concat(authors_table.c.name, ';'))\
+                    .select_from(authors_table.join(books_authors_link,
+                        books_authors_link.c.author == authors_table.c.id))\
+                        .where(books_authors_link.c.book == books.c.id)\
+                        .label('authors')
 
-            stm = select(books.c.title, books.c.has_cover,
-                books.c.id,
-                authors.c.name.label('authors'))\
-                        .select_from(books.join(books_authors_link,
-                            books_authors_link.c.book == books.c.id)\
-                        .join(authors,
-                            books_authors_link.c.author == authors.c.id)\
-                        .join(books_tags_link,
-                            books_tags_link.c.book == books.c.id)\
-                        .join(tags,
-                            books_tags_link.c.tag == tags.c.id))\
-                        .where(tags.c.name.ilike('%%%s%%' % search))\
-                        .order_by(books.c.last_modified.desc())\
-                        .limit(limit)\
-                        .offset((page - 1) * limit)
-            return self.resultproxy_to_dict(session.execute(stm).all())
-
-    def search_books_series(self, search, page=1, limit=30):
-        with self._session() as session:
-            meta = MetaData()
-            books = Table('books', meta, autoload_with=self._db_ng)
-            books_authors_link = Table('books_authors_link',
-                    meta, autoload_with=self._db_ng)
-            authors = Table('authors', meta, autoload_with=self._db_ng)
             books_series_link = Table('books_series_link',
                     meta, autoload_with=self._db_ng)
-            series = Table('series', meta, autoload_with=self._db_ng)
+            series_table = Table('series', meta, autoload_with=self._db_ng)
+            series = select(series_table.c.name)\
+                    .select_from(series_table.join(books_series_link,
+                        books_series_link.c.series == series_table.c.id))\
+                    .where(books_series_link.c.book == books.c.id)\
+                    .label('series')
 
-            stm = select(books.c.title, books.c.has_cover,
-                books.c.id,
-                authors.c.name.label('authors'))\
-                        .select_from(books.join(books_authors_link,
-                            books_authors_link.c.book == books.c.id)\
-                        .join(authors,
-                            books_authors_link.c.author == authors.c.id)\
-                        .join(books_series_link,
-                            books_series_link.c.book == books.c.id)\
-                        .join(series,
-                            books_series_link.c.series == series.c.id))\
-                        .where(series.c.name.ilike('%%%s%%' % search))\
-                        .order_by(books.c.last_modified.desc())\
-                        .limit(limit)\
-                        .offset((page - 1) * limit)
-            return self.resultproxy_to_dict(session.execute(stm).all())
-
-    def search_books_authors(self, search, page=1, limit=30):
-        with self._session() as session:
-            meta = MetaData()
-            books = Table('books', meta, autoload_with=self._db_ng)
-            books_authors_link = Table('books_authors_link',
-                    meta, autoload_with=self._db_ng)
-            authors = Table('authors', meta, autoload_with=self._db_ng)
-
-            stm = select(books.c.title, books.c.has_cover,
-                books.c.id,
-                authors.c.name.label('authors'))\
-                        .select_from(books.join(books_authors_link,
-                            books_authors_link.c.book == books.c.id)\
-                        .join(authors,
-                            books_authors_link.c.author == authors.c.id))\
-                        .where(authors.c.name.ilike('%%%s%%' % search))\
-                        .order_by(books.c.last_modified.desc())\
-                        .limit(limit)\
-                        .offset((page - 1) * limit)
-            return self.resultproxy_to_dict(session.execute(stm).all())
-
-
-    def books_by_format(self, book_format, page=1, limit=30):
-        with self._session() as session:
-            meta = MetaData()
-            books = Table('books', meta, autoload_with=self._db_ng)
-            data = Table('Data', meta, autoload_with=self._db_ng)
-            stm = select(books.c.title, books.c.has_cover,
-                        books.c.id, data.c.format)\
-                        .select_from(books.join(data, data.c.book == books.c.id))\
-                        .where(data.c.format == book_format.upper())\
-                        .order_by(books.c.last_modified.desc())\
-                        .limit(limit)\
-                        .offset((page - 1) * limit)
-            return self.resultproxy_to_dict(session.execute(stm).all())
-
-    def books_by_format_and_tags(self, book_format, tags, page=1, limit=30):
-        if not tags or len(tags) == 0:
-            return self.books_by_format(book_format, page, limit)
-        tags = [tag.lower() for tag in tags.split(',')]
-        with self._session() as session:
-            meta = MetaData()
-            books = Table('books', meta, autoload_with=self._db_ng)
-            data = Table('Data', meta, autoload_with=self._db_ng)
+            tags_table = Table('tags', meta, autoload_with=self._db_ng)
             books_tags_link = Table('books_tags_link',
                     meta, autoload_with=self._db_ng)
-            tags_table = Table('tags', meta, autoload_with=self._db_ng)
-            stm = select(books.c.title, books.c.has_cover,
-                        books.c.id, data.c.format)\
-                        .select_from(books.join(data, data.c.book == books.c.id)\
-                        .join(books_tags_link,
-                            books_tags_link.c.book == books.c.id)\
-                        .join(tags_table,
-                            books_tags_link.c.tag == tags_table.c.id))\
-                        .where(data.c.format == book_format.upper())\
-                        .where(tags_table.c.name.in_(tags))\
-                        .order_by(books.c.last_modified.desc())\
-                        .limit(limit)\
-                        .offset((page - 1) * limit)
-            return self.resultproxy_to_dict(session.execute(stm).all())
+            tags = select(group_concat(tags_table.c.name, ', '))\
+                    .select_from(tags_table.join(books_tags_link,
+                        books_tags_link.c.tag == tags_table.c.id))\
+                    .where(books_tags_link.c.book == books.c.id)\
+                    .label('tags')
 
-    def search_books(self, search, attribute, page=1, limit=30):
-        if attribute and attribute in ['authors', 'series', 'tags'] and search:
-            if attribute == 'authors':
-                return self.search_books_authors(search, page, limit)
-            elif attribute == 'series':
-                return self.search_books_series(search, page, limit)
-            elif attribute == 'tags':
-                return self.search_books_tags(search, page, limit)
-        else:
-            with self._session() as session:
-                meta = MetaData()
-                books = Table('books', meta, autoload_with=self._db_ng)
-                books_authors_link = Table('books_authors_link',
-                        meta, autoload_with=self._db_ng)
-                authors = Table('authors', meta, autoload_with=self._db_ng)
-                stm = None
-                author = select(group_concat(authors.c.name, ';'))\
-                        .select_from(authors.join(books_authors_link,
-                            books_authors_link.c.author == authors.c.id))\
-                            .where(books_authors_link.c.book == books.c.id)\
-                            .label('authors')
-                if search:
-                    stm = select(books.c.title, books.c.has_cover,
-                        books.c.id, author)\
-                        .where(books.c.title.ilike('%%%s%%' % search) |
-                                author.ilike('%%%s%%' % search))\
-                        .order_by(books.c.last_modified.desc())\
-                        .limit(limit)\
-                        .offset((page - 1) * limit)
+            data_table = Table('Data', meta, autoload_with=self._db_ng)
+            query = select(books.c.title, books.c.has_cover,
+                books.c.id, author, series, tags, books.c.series_index)
+            if book_format:
+                query = query.select_from(books.join(data_table,
+                    data_table.c.book == books.c.id))\
+                    .where(data_table.c.format == book_format.upper())
+
+            if search:
+                if attribute and attribute in ['authors', 'series', 'tags']:
+                    match attribute:
+                        case 'authors':
+                            query = query.where(author.ilike('%%%s%%' % search))
+                        case 'series':
+                            query = query.where(series.ilike('%%%s%%' % search))
+                        case 'tags':
+                            query = query.where(or_(*[tags.contains(search_tag) for search_tag in search.split(',')]))
                 else:
-                    stm = select(books.c.title, books.c.has_cover,
-                        books.c.id,
-                        author)\
-                        .order_by(books.c.last_modified.desc())\
-                        .limit(limit)\
-                        .offset((page - 1) * limit)
-                return self.resultproxy_to_dict(session.execute(stm).all())
+                    query = query.where(books.c.title.ilike('%%%s%%' % search) |
+                            author.ilike('%%%s%%' % search))
+            query = query.order_by(books.c.last_modified.desc())\
+                    .limit(limit)\
+                    .offset((page - 1) * limit)
+            return self.resultproxy_to_dict(session.execute(query).all())
 
     @staticmethod
     def resultproxy_to_dict(result):

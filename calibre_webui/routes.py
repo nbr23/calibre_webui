@@ -138,7 +138,7 @@ def device_feed(device_id, page=1):
     if not device:
         return redirect(url_for("device_register"))
     book_format = device.formats.upper()
-    books = app.calibredb_wrap.books_by_format_and_tags(book_format, tags=device.book_tags_filters, page=page)
+    books = app.calibredb_wrap.search_books(device.book_tags_filters, 'tags', book_format=book_format, page=page)
     return render_template('feed.html', books=books, title=device.name,
             book_format=book_format, page=page, device_id=device_id, calibre_version=CalibreDBW.get_calibre_version())
 
