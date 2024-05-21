@@ -1,10 +1,10 @@
-from flask import render_template, request, Response, send_from_directory, \
-        jsonify, make_response, redirect, url_for, flash
+from flask import render_template, request, send_from_directory, \
+        jsonify, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from urllib.parse import urljoin
 import os
 
-from calibre_webui import app, qrcode
+from calibre_webui import app
 from calibre_wrapper.calibredb import CalibreDBW
 
 def flash_error(message):

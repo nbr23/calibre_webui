@@ -1,8 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, MetaData, create_engine
+from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.orm import sessionmaker
-from queue import Queue
-from threading import Thread
 import os
 
 Base = declarative_base()
