@@ -1,5 +1,11 @@
 pipeline {
     agent any
+
+    options {
+        disableConcurrentBuilds()
+        ansiColor('xterm')
+    }
+
     stages {
 
 
