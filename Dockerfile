@@ -6,14 +6,14 @@ WORKDIR /build
 COPY ./bootstrap.sh /build/
 RUN ./bootstrap.sh
 
-FROM ubuntu:22.04 as python_env
+FROM ubuntu:24.04 as python_env
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt -y install gcc python3 python3-pip python3-venv
 
 COPY requirements.txt .
 RUN python3 -m venv /opt/python-env && PATH="/opt/python-env/bin:$PATH" pip3 install --no-cache-dir -r requirements.txt
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 EXPOSE 8000
 ARG CALIBRE_UID=112
