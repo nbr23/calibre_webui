@@ -8,7 +8,7 @@ RUN ./bootstrap.sh
 
 FROM ubuntu:24.04 as python_env
 
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt -y install gcc python3 python3-pip python3-venv
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt -y --no-install-recommends install gcc python3 python3-pip python3-venv python3-dev
 
 COPY requirements.txt .
 RUN python3 -m venv /opt/python-env && PATH="/opt/python-env/bin:$PATH" pip3 install --no-cache-dir -r requirements.txt
@@ -18,7 +18,7 @@ FROM ubuntu:24.04
 EXPOSE 8000
 ARG CALIBRE_UID=112
 
-RUN apt update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt -y --no-install-recommends install tzdata calibre python3 locales
+RUN apt update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt -y --no-install-recommends install tzdata calibre locales
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
