@@ -167,11 +167,14 @@ class CalibreDBW:
 
             data_table = Table('Data', meta, autoload_with=self._db_ng)
             query = select(books.c.title, books.c.has_cover,
-                books.c.id, author, series, tags, books.c.series_index)
+                books.c.id, author, series, tags, books.c.series_index, data_table.c.format)
+
             if book_format:
-                query = query.select_from(books.join(data_table,
-                    data_table.c.book == books.c.id))\
-                    .where(data_table.c.format == book_format.upper())
+                format_conditions = []
+                for f in book_format.split(','):
+                    format_conditions.append(data_table.c.format == f.upper())
+                query = query.select_from(books.join(data_table, data_table.c.book == books.c.id))\
+                    .where(or_(*format_conditions))
 
             if search:
                 if attribute and attribute in ['authors', 'series', 'tags']:

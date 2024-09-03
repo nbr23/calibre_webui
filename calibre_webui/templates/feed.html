@@ -25,10 +25,10 @@
     <tr>
     {% endif %}
       <td>
-        <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=book_format, device_id=device_id) }}">
+        <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=book.format, device_id=device_id) }}">
           <img class="cover" src="{{ url_for('device_feed_get_cover', device_id=device_id, book_id=book.id) }}"/><br/>
           {{book.title | truncate(30)}}
-        </a>
+        </a>&nbsp;{{book.format}}
         {% if book.series %}&nbsp;#{% if book.series_index | int == book.series_index %}{{book.series_index | int}}{% else %}{{book.series_index}}{% endif %}{% endif %}
       </td>
     {% if loop.index % 3 == 0 %}

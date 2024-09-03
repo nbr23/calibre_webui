@@ -140,7 +140,7 @@ def device_feed(device_id, page=1):
     book_format = device.formats.upper()
     books = app.calibredb_wrap.search_books(device.book_tags_filters, 'tags', book_format=book_format, page=page)
     return render_template('feed.html', books=books, title=device.name,
-            book_format=book_format, page=page, device_id=device_id, calibre_version=CalibreDBW.get_calibre_version())
+            preferred_formats=book_format.split(','), page=page, device_id=device_id, calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/feeds/<device_id>/books/<int:book_id>/file/<book_format>/')
 def device_feed_download_book_file(device_id, book_id, book_format):
