@@ -6,13 +6,13 @@ WORKDIR /build
 COPY ./bootstrap.sh /build/
 RUN ./bootstrap.sh
 
-FROM python:3-slim AS python_env
+FROM ubuntu:24.04 AS python_env
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt -y --no-install-recommends install gcc python3 python3-pip python3-venv python3-dev
 
 COPY requirements.txt .
-RUN apt update \
-  && DEBIAN_FRONTEND=noninteractive apt -y --no-install-recommends install gcc python3 python3-pip python3-venv python3-dev \
-  && python3 -m venv /opt/python-env \
-  && PATH="/opt/python-env/bin:$PATH" pip3 install --no-cache-dir -r requirements.txt
+RUN python3 -m venv /opt/python-env && PATH="/opt/python-env/bin:$PATH" pip3 install --no-cache-dir -r requirements.txt
 
 FROM ubuntu:24.04
 
@@ -43,4 +43,4 @@ COPY --from=bootstrap /build/calibre_webui /var/www/calibre_webui/calibre_webui
 
 COPY ./calibre_wrapper ./calibre_wrapper
 
-CMD /var/www/calibre_webui/run_app.sh
+CMD ["/var/www/calibre_webui/run_app.sh"]
