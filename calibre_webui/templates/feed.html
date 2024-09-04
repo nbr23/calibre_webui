@@ -21,15 +21,22 @@
     <h1>{{title}}</h1>
     <table>
     {% for book in books %}
+    {% set book_formats = (preferred_formats|select("in", book.formats)|list) %}
+    {% set preferred_book_format = book_formats|first %}
     {% if loop.index % 3 == 1 %}
     <tr>
     {% endif %}
       <td>
-        <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=book.format, device_id=device_id) }}">
+        <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=preferred_book_format, device_id=device_id) }}">
           <img class="cover" src="{{ url_for('device_feed_get_cover', device_id=device_id, book_id=book.id) }}"/><br/>
           {{book.title | truncate(30)}}
-        </a>&nbsp;{{book.format}}
+        </a>
         {% if book.series %}&nbsp;#{% if book.series_index | int == book.series_index %}{{book.series_index | int}}{% else %}{{book.series_index}}{% endif %}{% endif %}
+        {% if book_formats | length > 1 %}
+          {% for f in book_formats %}
+          &nbsp;<a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=f, device_id=device_id) }}">{{f}}</a>
+          {% endfor %}
+        {% endif %}
       </td>
     {% if loop.index % 3 == 0 %}
     </tr>

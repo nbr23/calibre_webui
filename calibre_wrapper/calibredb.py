@@ -1,7 +1,7 @@
 import subprocess
 from sqlalchemy import create_engine, Table, MetaData, and_
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select, expression, or_
+from sqlalchemy.sql import select, expression, or_, func
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.engine import Row
 from threading import Thread
@@ -166,15 +166,24 @@ class CalibreDBW:
                     .label('tags')
 
             data_table = Table('Data', meta, autoload_with=self._db_ng)
+            formats = select(func.group_concat(data_table.c.format, ','))\
+                .where(data_table.c.book == books.c.id)\
+                .correlate(books)\
+                .scalar_subquery()\
+                .label('formats')
+
             query = select(books.c.title, books.c.has_cover,
-                books.c.id, author, series, tags, books.c.series_index, data_table.c.format)
+                books.c.id, author, series, tags, books.c.series_index, formats)
+            query = query.select_from(books.join(data_table, data_table.c.book == books.c.id))
 
             if book_format:
                 format_conditions = []
                 for f in book_format.split(','):
-                    format_conditions.append(data_table.c.format == f.upper())
-                query = query.select_from(books.join(data_table, data_table.c.book == books.c.id))\
-                    .where(or_(*format_conditions))
+                    format_conditions.append(func.upper(data_table.c.format) == f.upper())
+                query = query.where(or_(*format_conditions))
+
+            query = query.group_by(books.c.id, books.c.title, books.c.has_cover,
+                                books.c.series_index, author, series, tags)
 
             if search:
                 if attribute and attribute in ['authors', 'series', 'tags']:
