@@ -39,7 +39,10 @@
       authors = authors.join(' - ');
       books_list += '<div class="col-sm-3 col-lg-2 col-xs-6 ">' +
         '<a href="/books/' + data[i]['id'] + '/edit">' +
+        '<div class="book-cover-container">' +
         '<img class="cover mx-auto d-block" src="/books/' + data[i]['id'] + '/cover"/>' +
+        `${data[i]['read'] ? '<span class="read-banner">READ</span>' : ''}` +
+        '</div>' +
         '</a><br/>' +
         '<center>' +
         '<p><a style="color: #000000; font-size: 100%;" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a>' + (data[i]['series'] ? ` <a style="color: #aaaaaa; font-size: 100%;" href="?search=${data[i]['series']}&search_scope=series">#${data[i]['series_index']}</a>` : '') + '</br>' +

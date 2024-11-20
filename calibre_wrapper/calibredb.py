@@ -208,7 +208,10 @@ class CalibreDBW:
                 query = query.order_by(books.c.last_modified.desc())
             query = query.limit(limit)\
                     .offset((page - 1) * limit)
-            return self.resultproxy_to_dict(session.execute(query).all())
+            result = self.resultproxy_to_dict(session.execute(query).all())
+            result = [dict(book, **{'read': len([tag for tag in (book.get('tags') or '').split(',') if tag == 'read']) > 0})
+                    for book in result]
+            return result
 
     @staticmethod
     def resultproxy_to_dict(result):
