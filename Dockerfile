@@ -1,3 +1,4 @@
+ARG UBUNTU_VERSION=24.10
 FROM alpine AS bootstrap
 
 RUN apk add --no-cache wget unzip
@@ -6,7 +7,7 @@ WORKDIR /build
 COPY ./bootstrap.sh /build/
 RUN ./bootstrap.sh
 
-FROM ubuntu:24.04 AS python_env
+FROM ubuntu:${UBUNTU_VERSION} AS python_env
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && apt -y --no-install-recommends install gcc python3 python3-venv python3-dev
@@ -14,14 +15,14 @@ RUN apt update && apt -y --no-install-recommends install gcc python3 python3-ven
 COPY requirements.txt .
 RUN python3 -m venv /opt/python-env && PATH="/opt/python-env/bin:$PATH" pip3 install --no-cache-dir -r requirements.txt
 
-FROM ubuntu:24.04
+FROM ubuntu:${UBUNTU_VERSION}
 
 EXPOSE 8000
 ARG CALIBRE_UID=112
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 RUN apt update \
