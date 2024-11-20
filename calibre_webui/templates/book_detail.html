@@ -66,6 +66,10 @@
           {% endfor %}
         </select>
       </div>
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2" for="book_read">Read</label>
+        <input type="checkbox" class="form-control col-sm-2" name="read" id="book_read" {% if book.read %}checked{% endif %}>
+      </div>
       <div class="text-center">
         <button type="submit" class="btn btn-primary">Save</button>
       </div>

@@ -331,7 +331,8 @@ class CalibreDBW:
     def get_book_details(self, book_id):
         book, formats = self.resultproxy_to_dict(self.get_book(book_id)), None
         if book:
-            book['tags'] = ', '.join([tag['name'] for tag in self.get_book_tags(book_id)])
+            tags = self.get_book_tags(book_id)
+            book['tags'] = ', '.join([tag['name'] for tag in tags])
             book['publisher'] = ', '.join([pub['name']
                 for pub in self.get_book_publishers(book_id)])
             book['languages'] = ', '.join([lang['lang_code']
@@ -341,6 +342,7 @@ class CalibreDBW:
             formats = self.get_book_formats(book_id)
             book['authors'] = ' & '.join(book['authors'].split(';'))
             book['series'] = ' & '.join(book['series'].split(';')) if book['series'] else ''
+            book['read'] = len([tag['name'] for tag in tags if tag['name'] == 'read']) > 0
         return (book, formats)
 
     def get_book_formats(self, book_id):

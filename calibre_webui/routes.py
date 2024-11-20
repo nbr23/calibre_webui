@@ -204,11 +204,20 @@ def book_refresh_metadata(book_id):
 def book_save(book_id):
     metadata = {}
     book, formats = app.calibredb_wrap.get_book_details(book_id)
-    for field in ['title', 'authors', 'publisher', 'comments', 'tags',
+    for field in ['title', 'authors', 'publisher', 'comments',
             'languages', 'pubdate', 'series', 'series_index']:
         if field in request.form and \
                 request.form.get(field) != book[field]:
             metadata[field] = request.form.get(field)
+
+    tags = [tag for tag in request.form.get('tags', '').split(',') if tag != '']
+    if request.form.get('read') == 'on':
+        tags.append('read')
+    else:
+        tags = [i for i in tags if i != 'read']
+    metadata['tags'] = ','.join(set(tags))
+    if metadata['tags'] == book['tags']:
+        metadata.pop('tags')
 
     if 'rating' in request.form and \
             request.form.get('rating') != book['rating']:
