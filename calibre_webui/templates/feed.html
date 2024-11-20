@@ -12,6 +12,20 @@
     td {
       padding: 10px;
     }
+    .book-cover-container {
+      position: relative;
+    }
+    .read-banner {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #22c55e;
+      color: white;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 3px;
+    }
     </style>
     <title>{{title}}</title>
   </head>
@@ -28,7 +42,12 @@
     {% endif %}
       <td>
         <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=preferred_book_format, device_id=device_id) }}">
-          <img class="cover" src="{{ url_for('device_feed_get_cover', device_id=device_id, book_id=book.id) }}"/><br/>
+          <div class="book-cover-container">
+            <img class="cover" src="{{ url_for('device_feed_get_cover', device_id=device_id, book_id=book.id) }}"/>
+            {% if book.read %}
+              <span class="read-banner">READ</span>
+            {% endif %}
+          </div>
           {{book.title | truncate(30)}}
         </a>
         {% if book.series %}&nbsp;#{% if book.series_index | int == book.series_index %}{{book.series_index | int}}{% else %}{{book.series_index}}{% endif %}{% endif %}
