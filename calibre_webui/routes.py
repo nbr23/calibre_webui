@@ -214,7 +214,7 @@ def book_save(book_id):
     if request.form.get('read') == 'on':
         tags.append('read')
     else:
-        tags = [i for i in tags if i != 'read']
+        tags = [t for t in tags if t.strip() != 'read']
     metadata['tags'] = ','.join(set(tags))
     if metadata['tags'] == book['tags']:
         metadata.pop('tags')
