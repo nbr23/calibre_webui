@@ -27,7 +27,8 @@
   +'&search_scope={{ scope }}'{% endif %}, function (data) {
     if (data.length == 0) {
       $("#load_more").hide();
-      return 0;
+      $('#books_list').html('<div class="col-sm-12 col-lg-12 col-xs-12 "><center><h3 style="color: gray">No books found!</32></center></div>');
+      return;
     }
     books_list = $('#books_list').html();
     for (i = 0; i < data.length; i++) {
