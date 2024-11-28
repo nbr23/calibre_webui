@@ -133,7 +133,7 @@ class CalibreDBW:
         else:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
-    def search_books(self, search, attribute, page=1, limit=30, book_format=None):
+    def search_books(self, search, attribute, page=1, limit=20, book_format=None):
         with self._session() as session:
             meta = MetaData()
             books = Table('books', meta, autoload_with=self._db_ng)
