@@ -224,11 +224,15 @@ class CalibreDBW:
             res.append(CalibreDBW.resultproxy_to_dict(row))
         return res
 
+    _CALIBRE_VERSION = None
     @staticmethod
     def get_calibre_version():
+        if CalibreDBW._CALIBRE_VERSION:
+            return CalibreDBW._CALIBRE_VERSION
         res = subprocess.run(['calibre', '--version'], capture_output=True)
         m = re.match(RE_CALIBRE_VERSION, res.stdout.decode().replace("\n", ""))
-        return m.group(1)
+        CalibreDBW._CALIBRE_VERSION = m.group(1)
+        return CalibreDBW._CALIBRE_VERSION
 
     def list_books_attributes(self, attr_table, attr_link_column):
         attr_list = []
