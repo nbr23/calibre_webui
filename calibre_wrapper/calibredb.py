@@ -189,9 +189,9 @@ class CalibreDBW:
                 if attribute and attribute in ['authors', 'series', 'tags']:
                     match attribute:
                         case 'authors':
-                            query = query.where(author.ilike('%%%s%%' % search))
+                            query = query.where(author.ilike(f'%{search}%'))
                         case 'series':
-                            query = query.where(series.ilike('%%%s%%' % search))
+                            query = query.where(series.ilike(f'%{search}%'))
                         case 'tags':
                             query = query.where(
                                 or_(*[
@@ -199,13 +199,18 @@ class CalibreDBW:
                                 ])
                             )
                 else:
-                    query = query.where(books.c.title.ilike('%%%s%%' % search) |
-                            author.ilike('%%%s%%' % search))
+                    query = query.where(
+                        or_(
+                            books.c.title.ilike(f'%{search}%'),
+                            author.ilike(f'%{search}%')
+                        )
+                    )
 
             if attribute == 'series':
                 query = query.order_by(books.c.series_index)
             else :
                 query = query.order_by(books.c.last_modified.desc())
+
             query = query.limit(limit)\
                     .offset((page - 1) * limit)
             result = self.resultproxy_to_dict(session.execute(query).all())
