@@ -7,10 +7,12 @@ WORKDIR /build
 COPY ./bootstrap.sh /build/
 RUN ./bootstrap.sh
 
-FROM ubuntu:${UBUNTU_VERSION} AS python_env
+FROM python:3.12-slim AS python_env
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt -y --no-install-recommends install gcc python3 python3-venv python3-dev
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN python3 -m venv /opt/python-env && PATH="/opt/python-env/bin:$PATH" pip3 install --no-cache-dir -r requirements.txt
@@ -27,7 +29,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 RUN apt update \
   && apt -y --no-install-recommends install tzdata calibre locales \
-  && apt clean \
+  && apt clean \ \
+  && rm -rf /var/lib/apt/lists/* \
   && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen en_US.UTF-8 \
   && useradd -ms /bin/bash -u ${CALIBRE_UID} -g www-data calibre \
   && mkdir /etc/calibre_webui/ && chown ${CALIBRE_UID}:www-data /etc/calibre_webui/
