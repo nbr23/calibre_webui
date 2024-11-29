@@ -122,15 +122,15 @@ class CalibreDBW:
         tmp_file = os.path.join(tmp_dir, 'calibre_temp_%s_%i.%s' % (book_id,
             uuid.uuid4().fields[1], format_to.lower()))
         fullpath = os.path.join(fpath, fname)
-        if subprocess.run(['ebook-convert', fullpath,
-                            tmp_file]).returncode == 0:
-            if self.get_book(book_id) == None:
+        try:
+            subprocess.run(['ebook-convert', fullpath, tmp_file], check=True)
+            if self.get_book(book_id) is None:
                 self.add_book(tmp_file)
             else:
                 self.add_format(book_id, tmp_file)
             os.remove(tmp_file)
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
-        else:
+        except subprocess.CalledProcessError:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
     def search_books(self, search, attribute, page=1, limit=20, book_format=None):
