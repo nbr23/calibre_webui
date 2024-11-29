@@ -34,6 +34,27 @@ def group_concat_sqlite(element, compiler, **kw):
         return 'GROUP_CONCAT(%s)' % compiled
 
 class CalibreDBW:
+    def _init_tables_metadata(self):
+        meta = MetaData()
+        self._tables = {
+            'books': Table('Books', meta, autoload_with=self._db_ng),
+            'authors': Table('authors', meta, autoload_with=self._db_ng),
+            'comments': Table('comments', meta, autoload_with=self._db_ng),
+            'identifiers': Table('identifiers', meta, autoload_with=self._db_ng),
+            'books_series_link': Table('books_series_link', meta, autoload_with=self._db_ng),
+            'books_publishers_link': Table('books_publishers_link', meta, autoload_with=self._db_ng),
+            'books_tags_link': Table('books_tags_link', meta, autoload_with=self._db_ng),
+            'books_authors_link': Table('books_authors_link', meta, autoload_with=self._db_ng),
+            'books_languages_link': Table('books_languages_link', meta, autoload_with=self._db_ng),
+            'books_ratings_link': Table('books_ratings_link', meta, autoload_with=self._db_ng),
+            'series': Table('series', meta, autoload_with=self._db_ng),
+            'Data': Table('Data', meta, autoload_with=self._db_ng),
+            'tags': Table('tags', meta, autoload_with=self._db_ng),
+            'publishers': Table('publishers', meta, autoload_with=self._db_ng),
+            'languages': Table('languages', meta, autoload_with=self._db_ng),
+            'ratings': Table('ratings', meta, autoload_with=self._db_ng),
+        }
+
     def __init__(self, config):
         self._task_list_name = 'CALIBRE_WEBUI_TASKS_LIST'
         self._config = config
@@ -41,6 +62,7 @@ class CalibreDBW:
         self._calibre_db = os.path.join(self._calibre_lib_dir, 'metadata.db')
         self._db_ng = create_engine('sqlite:///%s' % self._calibre_db)
         self._session = sessionmaker(self._db_ng)
+        self._init_tables_metadata()
         self.clear_tasks()
 
     def add_book(self, file_path):
@@ -135,67 +157,57 @@ class CalibreDBW:
 
     def search_books(self, search, attribute, page=1, limit=20, book_format=None):
         with self._session() as session:
-            meta = MetaData()
-            books = Table('books', meta, autoload_with=self._db_ng)
-
-            data_table = Table('Data', meta, autoload_with=self._db_ng)
-            formats = select(func.group_concat(data_table.c.format, ','))\
-                .where(data_table.c.book == books.c.id)\
-                .correlate(books)\
+            formats = select(func.group_concat(self._tables['Data'].c.format, ','))\
+                .where(self._tables['Data'].c.book == self._tables['books'].c.id)\
+                .correlate(self._tables['books'])\
                 .scalar_subquery()\
                 .label('formats')
 
             select_columns = [
-                books.c.title,
-                books.c.has_cover,
-                books.c.id,
+                self._tables['books'].c.title,
+                self._tables['books'].c.has_cover,
+                self._tables['books'].c.id,
                 formats
             ]
 
             if not attribute or attribute == 'authors' or search:
-                authors_table = Table('authors', meta, autoload_with=self._db_ng)
-                books_authors_link = Table('books_authors_link', meta, autoload_with=self._db_ng)
-                author = select(group_concat(authors_table.c.name, ';'))\
-                        .select_from(authors_table.join(books_authors_link,
-                            books_authors_link.c.author == authors_table.c.id))\
-                            .where(books_authors_link.c.book == books.c.id)\
+                author = select(group_concat(self._tables['authors'].c.name, ';'))\
+                        .select_from(self._tables['authors'].join(self._tables['books_authors_link'],
+                            self._tables['books_authors_link'].c.author == self._tables['authors'].c.id))\
+                            .where(self._tables['books_authors_link'].c.book == self._tables['books'].c.id)\
                             .label('authors')
                 select_columns.append(author)
 
             if not attribute or attribute == 'series':
-                books_series_link = Table('books_series_link', meta, autoload_with=self._db_ng)
-                series_table = Table('series', meta, autoload_with=self._db_ng)
-                series = select(series_table.c.name)\
-                        .select_from(series_table.join(books_series_link,
-                            books_series_link.c.series == series_table.c.id))\
-                        .where(books_series_link.c.book == books.c.id)\
+                series = select(self._tables['series'].c.name)\
+                        .select_from(self._tables['series'].join(self._tables['books_series_link'],
+                            self._tables['books_series_link'].c.series == self._tables['series'].c.id))\
+                        .where(self._tables['books_series_link'].c.book == self._tables['books'].c.id)\
                         .label('series')
                 select_columns.append(series)
-                select_columns.append(books.c.series_index)
+                select_columns.append(self._tables['books'].c.series_index)
 
             if not attribute or attribute == 'tags':
-                tags_table = Table('tags', meta, autoload_with=self._db_ng)
-                books_tags_link = Table('books_tags_link', meta, autoload_with=self._db_ng)
-                tags = select(group_concat(tags_table.c.name, ', '))\
-                        .select_from(tags_table.join(books_tags_link,
-                            books_tags_link.c.tag == tags_table.c.id))\
-                        .where(books_tags_link.c.book == books.c.id)\
+                tags = select(group_concat(self._tables['tags'].c.name, ', '))\
+                        .select_from(self._tables['tags'].join(self._tables['books_tags_link'],
+                            self._tables['books_tags_link'].c.tag == self._tables['tags'].c.id))\
+                        .where(self._tables['books_tags_link'].c.book == self._tables['books'].c.id)\
                         .label('tags')
                 select_columns.append(tags)
 
             query = select(*select_columns)
-            query = query.select_from(books.join(data_table, data_table.c.book == books.c.id))
+            query = query.select_from(self._tables['books'].join(self._tables['Data'], self._tables['Data'].c.book == self._tables['books'].c.id))
 
             if book_format:
-                format_conditions = [func.upper(data_table.c.format) == f.upper()
+                format_conditions = [func.upper(self._tables['Data'].c.format) == f.upper()
                                 for f in book_format.split(',')]
                 query = query.where(or_(*format_conditions))
 
-            group_by_columns = [books.c.id, books.c.title, books.c.has_cover]
+            group_by_columns = [self._tables['books'].c.id, self._tables['books'].c.title, self._tables['books'].c.has_cover]
             if not attribute or attribute == 'authors' or search:
                 group_by_columns.append(author)
             if not attribute or attribute == 'series':
-                group_by_columns.extend([series, books.c.series_index])
+                group_by_columns.extend([series, self._tables['books'].c.series_index])
             if not attribute or attribute == 'tags':
                 group_by_columns.append(tags)
 
@@ -216,15 +228,15 @@ class CalibreDBW:
                 else:
                     query = query.where(
                         or_(
-                            books.c.title.ilike(f'%{search}%'),
+                            self._tables['books'].c.title.ilike(f'%{search}%'),
                             author.ilike(f'%{search}%')
                         )
                     )
 
             if attribute == 'series':
-                query = query.order_by(books.c.series_index)
+                query = query.order_by(self._tables['books'].c.series_index)
             else:
-                query = query.order_by(books.c.last_modified.desc())
+                query = query.order_by(self._tables['books'].c.last_modified.desc())
 
             query = query.limit(limit).offset((page - 1) * limit)
 
@@ -258,9 +270,8 @@ class CalibreDBW:
 
     def list_books_attributes(self, attr_table, attr_link_column):
         attr_list = []
-        meta = MetaData()
-        a_table = Table(attr_table, meta, autoload_with=self._db_ng)
-        books_attr_link = Table('books_%s_link' % attr_table, meta, autoload_with=self._db_ng)
+        a_table = self._tables[attr_table]
+        books_attr_link = self._tables['books_%s_link' % attr_table]
 
         with self._session() as session:
             stm = select(a_table).order_by(a_table.c.name)
@@ -283,38 +294,27 @@ class CalibreDBW:
 
     def get_book(self, book_id):
         with self._session() as session:
-            meta = MetaData()
-            books = Table('Books', meta, autoload_with=self._db_ng)
-            books_authors_link = Table('books_authors_link',
-                    meta, autoload_with=self._db_ng)
-            authors = Table('authors', meta, autoload_with=self._db_ng)
-            comments = Table('comments', meta, autoload_with=self._db_ng)
-            identifiers = Table('identifiers', meta, autoload_with=self._db_ng)
-            books_series_link = Table('books_series_link',
-                    meta, autoload_with=self._db_ng)
-            series = Table('series', meta, autoload_with=self._db_ng)
-
-            author = select(group_concat(authors.c.name, ';'))\
-                    .select_from(authors.join(books_authors_link,
-                        books_authors_link.c.author == authors.c.id))\
-                    .where(books_authors_link.c.book == books.c.id)\
+            author = select(group_concat(self._tables['authors'].c.name, ';'))\
+                    .select_from(self._tables['authors'].join(self._tables['books_authors_link'],
+                        self._tables['books_authors_link'].c.author == self._tables['authors'].c.id))\
+                    .where(self._tables['books_authors_link'].c.book == self._tables['books'].c.id)\
                     .label('authors')
-            series = select(series.c.name)\
-                    .select_from(series.join(books_series_link,
-                        books_series_link.c.series == series.c.id))\
-                    .where(books_series_link.c.book == books.c.id)\
+            series = select(self._tables['series'].c.name)\
+                    .select_from(self._tables['series'].join(self._tables['books_series_link'],
+                        self._tables['books_series_link'].c.series == self._tables['series'].c.id))\
+                    .where(self._tables['books_series_link'].c.book == self._tables['books'].c.id)\
                     .label('series')
-            comment = select(comments.c.text)\
-                    .where(comments.c.book == book_id).label('comments')
+            comment = select(self._tables['comments'].c.text)\
+                    .where(self._tables['comments'].c.book == book_id).label('comments')
 
-            isbn = select(identifiers.c.val)\
-                    .where(and_(identifiers.c.book == book_id,
-                        identifiers.c.type == 'isbn')).label('isbn')
+            isbn = select(self._tables['identifiers'].c.val)\
+                    .where(and_(self._tables['identifiers'].c.book == book_id,
+                        self._tables['identifiers'].c.type == 'isbn')).label('isbn')
 
-            stm = select(books.c.title, books.c.path, books.c.pubdate,
-                        books.c.has_cover, books.c.id, books.c.series_index,
+            stm = select(self._tables['books'].c.title, self._tables['books'].c.path, self._tables['books'].c.pubdate,
+                        self._tables['books'].c.has_cover, self._tables['books'].c.id, self._tables['books'].c.series_index,
                         author, comment, isbn, series)\
-                    .where(books.c.id == book_id)
+                    .where(self._tables['books'].c.id == book_id)
             return session.execute(stm).first()
 
     def get_book_attributes(self, book_id, attribute_table_name,
@@ -322,11 +322,9 @@ class CalibreDBW:
                             attribute_link_name,
                             first=False):
         with self._session() as session:
-            meta = MetaData()
-            books_attributes_link = Table('books_%s_link'
-                    % attribute_table_name,
-                    meta, autoload_with=self._db_ng)
-            attributes = Table(attribute_table_name, meta, autoload_with=self._db_ng)
+            books_attributes_link = self._tables['books_%s_link'
+                    % attribute_table_name]
+            attributes = self._tables[attribute_table_name]
 
             stm = select(getattr(attributes.c, attribute_column_name))\
                     .select_from( attributes.join(books_attributes_link,
@@ -377,9 +375,7 @@ class CalibreDBW:
     def get_book_formats(self, book_id):
         formats = []
         with self._session() as session:
-            meta = MetaData()
-            data = Table('Data', meta, autoload_with=self._db_ng)
-            stm = select(data).where(data.c.book == book_id)
+            stm = select(self._tables['Data']).where(self._tables['Data'].c.book == book_id)
             for book_format in session.execute(stm).fetchall():
                 formats.append({'format': book_format.format,
                     'size': '%.2f' % (
@@ -388,17 +384,13 @@ class CalibreDBW:
 
     def get_book_title(self, book_id):
         with self._session() as session:
-            meta = MetaData()
-            books = Table('Books', meta, autoload_with=self._db_ng)
-            stm = select(books.c.title).where(books.c.id == book_id)
+            stm = select(self._tables['books'].c.title).where(self._tables['books'].c.id == book_id)
             return session.execute(stm).first().title
 
     def get_book_file(self, book_id, book_format):
         book_path = self.get_book(book_id).path
         with self._session() as session:
-            meta = MetaData()
-            data = Table('Data', meta, autoload_with=self._db_ng)
-            stm = select(data).where(data.c.book == book_id)
+            stm = select(self._tables['Data']).where(self._tables['Data'].c.book == book_id)
             for fmt in session.execute(stm).fetchall():
                 if fmt.format == book_format:
                     filename = '%s.%s' % (fmt.name, book_format.lower())
