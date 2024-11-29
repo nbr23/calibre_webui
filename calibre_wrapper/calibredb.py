@@ -138,33 +138,6 @@ class CalibreDBW:
             meta = MetaData()
             books = Table('books', meta, autoload_with=self._db_ng)
 
-            authors_table = Table('authors', meta, autoload_with=self._db_ng)
-            books_authors_link = Table('books_authors_link',
-                    meta, autoload_with=self._db_ng)
-            author = select(group_concat(authors_table.c.name, ';'))\
-                    .select_from(authors_table.join(books_authors_link,
-                        books_authors_link.c.author == authors_table.c.id))\
-                        .where(books_authors_link.c.book == books.c.id)\
-                        .label('authors')
-
-            books_series_link = Table('books_series_link',
-                    meta, autoload_with=self._db_ng)
-            series_table = Table('series', meta, autoload_with=self._db_ng)
-            series = select(series_table.c.name)\
-                    .select_from(series_table.join(books_series_link,
-                        books_series_link.c.series == series_table.c.id))\
-                    .where(books_series_link.c.book == books.c.id)\
-                    .label('series')
-
-            tags_table = Table('tags', meta, autoload_with=self._db_ng)
-            books_tags_link = Table('books_tags_link',
-                    meta, autoload_with=self._db_ng)
-            tags = select(group_concat(tags_table.c.name, ', '))\
-                    .select_from(tags_table.join(books_tags_link,
-                        books_tags_link.c.tag == tags_table.c.id))\
-                    .where(books_tags_link.c.book == books.c.id)\
-                    .label('tags')
-
             data_table = Table('Data', meta, autoload_with=self._db_ng)
             formats = select(func.group_concat(data_table.c.format, ','))\
                 .where(data_table.c.book == books.c.id)\
@@ -172,18 +145,61 @@ class CalibreDBW:
                 .scalar_subquery()\
                 .label('formats')
 
-            query = select(books.c.title, books.c.has_cover,
-                books.c.id, author, series, tags, books.c.series_index, formats)
+            select_columns = [
+                books.c.title,
+                books.c.has_cover,
+                books.c.id,
+                formats
+            ]
+
+            if not attribute or attribute == 'authors' or search:
+                authors_table = Table('authors', meta, autoload_with=self._db_ng)
+                books_authors_link = Table('books_authors_link', meta, autoload_with=self._db_ng)
+                author = select(group_concat(authors_table.c.name, ';'))\
+                        .select_from(authors_table.join(books_authors_link,
+                            books_authors_link.c.author == authors_table.c.id))\
+                            .where(books_authors_link.c.book == books.c.id)\
+                            .label('authors')
+                select_columns.append(author)
+
+            if not attribute or attribute == 'series':
+                books_series_link = Table('books_series_link', meta, autoload_with=self._db_ng)
+                series_table = Table('series', meta, autoload_with=self._db_ng)
+                series = select(series_table.c.name)\
+                        .select_from(series_table.join(books_series_link,
+                            books_series_link.c.series == series_table.c.id))\
+                        .where(books_series_link.c.book == books.c.id)\
+                        .label('series')
+                select_columns.append(series)
+                select_columns.append(books.c.series_index)
+
+            if not attribute or attribute == 'tags':
+                tags_table = Table('tags', meta, autoload_with=self._db_ng)
+                books_tags_link = Table('books_tags_link', meta, autoload_with=self._db_ng)
+                tags = select(group_concat(tags_table.c.name, ', '))\
+                        .select_from(tags_table.join(books_tags_link,
+                            books_tags_link.c.tag == tags_table.c.id))\
+                        .where(books_tags_link.c.book == books.c.id)\
+                        .label('tags')
+                select_columns.append(tags)
+
+            query = select(*select_columns)
             query = query.select_from(books.join(data_table, data_table.c.book == books.c.id))
 
             if book_format:
-                format_conditions = []
-                for f in book_format.split(','):
-                    format_conditions.append(func.upper(data_table.c.format) == f.upper())
+                format_conditions = [func.upper(data_table.c.format) == f.upper()
+                                for f in book_format.split(',')]
                 query = query.where(or_(*format_conditions))
 
-            query = query.group_by(books.c.id, books.c.title, books.c.has_cover,
-                                books.c.series_index, author, series, tags)
+            group_by_columns = [books.c.id, books.c.title, books.c.has_cover]
+            if not attribute or attribute == 'authors' or search:
+                group_by_columns.append(author)
+            if not attribute or attribute == 'series':
+                group_by_columns.extend([series, books.c.series_index])
+            if not attribute or attribute == 'tags':
+                group_by_columns.append(tags)
+
+            query = query.group_by(*group_by_columns)
 
             if search:
                 if attribute and attribute in ['authors', 'series', 'tags']:
@@ -194,9 +210,8 @@ class CalibreDBW:
                             query = query.where(series.ilike(f'%{search}%'))
                         case 'tags':
                             query = query.where(
-                                or_(*[
-                                    tags.contains(search_tag) for search_tag in search.split(',')
-                                ])
+                                or_(*[tags.contains(search_tag)
+                                    for search_tag in search.split(',')])
                             )
                 else:
                     query = query.where(
@@ -208,14 +223,16 @@ class CalibreDBW:
 
             if attribute == 'series':
                 query = query.order_by(books.c.series_index)
-            else :
+            else:
                 query = query.order_by(books.c.last_modified.desc())
 
-            query = query.limit(limit)\
-                    .offset((page - 1) * limit)
+            query = query.limit(limit).offset((page - 1) * limit)
+
             result = self.resultproxy_to_dict(session.execute(query).all())
-            result = [dict(book, **{'read': len([tag for tag in (book.get('tags') or '').split(',') if tag.strip() == 'read']) > 0})
-                    for book in result]
+            result = [dict(book, **{
+                'read': len([tag for tag in (book.get('tags') or '').split(',')
+                            if tag.strip() == 'read']) > 0
+            }) for book in result]
             return result
 
     @staticmethod
