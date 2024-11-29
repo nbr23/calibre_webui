@@ -7,11 +7,11 @@ WORKDIR /build
 COPY ./bootstrap.sh /build/
 RUN ./bootstrap.sh
 
-FROM python:3.12-slim AS python_env
+FROM ubuntu:${UBUNTU_VERSION} AS python_env
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc python3-dev \
+    apt-get install -y --no-install-recommends gcc python3-dev python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
