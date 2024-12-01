@@ -268,29 +268,42 @@ class CalibreDBW:
         CalibreDBW._CALIBRE_VERSION = m.group(1)
         return CalibreDBW._CALIBRE_VERSION
 
-    def list_books_attributes(self, attr_table, attr_link_column):
+    def list_books_attributes(self, attr_table, attr_link_column, limit=0, page=0):
         attr_list = []
         a_table = self._tables[attr_table]
         books_attr_link = self._tables['books_%s_link' % attr_table]
 
         with self._session() as session:
-            stm = select(a_table).order_by(a_table.c.name)
+            offset = (page - 1) * limit
+            count_query = select(func.count()).select_from(a_table)
+
+            stm = select(a_table)\
+                .order_by(a_table.c.name)
+
+            if limit > 0 and page > 0:
+                stm = stm.limit(limit).offset(offset)
+
             for attr in session.execute(stm).fetchall():
-                stm = select(books_attr_link)\
-                        .where(getattr(books_attr_link.c,
-                            attr_link_column) == attr.id)
-                attr_list.append({'name': attr.name,
-                    'count': len(session.execute(stm).all())})
+                count_query = select(func.count())\
+                    .select_from(books_attr_link)\
+                    .where(getattr(books_attr_link.c, attr_link_column) == attr.id)
+
+                book_count = session.execute(count_query).scalar()
+
+                attr_list.append({
+                    'name': attr.name,
+                    'count': book_count
+                })
         return attr_list
 
-    def list_tags(self):
-        return self.list_books_attributes('tags', 'tag')
+    def list_tags(self, limit=0, page=0):
+        return self.list_books_attributes('tags', 'tag', limit, page)
 
-    def list_series(self):
-        return self.list_books_attributes('series', 'series')
+    def list_series(self, limit=0, page=0):
+        return self.list_books_attributes('series', 'series', limit, page)
 
-    def list_authors(self):
-        return self.list_books_attributes('authors', 'author')
+    def list_authors(self, limit=0, page=0):
+        return self.list_books_attributes('authors', 'author', limit, page)
 
     def get_book(self, book_id):
         with self._session() as session:
