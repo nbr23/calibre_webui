@@ -53,6 +53,24 @@ def clear_tasks():
     app.calibredb_wrap.clear_tasks()
     return jsonify({'status': 'ok'})
 
+@app.route('/api/authors/list', defaults={'page': 1})
+@app.route('/api/authors/list/<int:page>')
+def get_authors_list(page):
+    authors = app.calibredb_wrap.list_authors(limit=25, page=page)
+    return jsonify(authors)
+
+@app.route('/api/tags/list', defaults={'page': 1})
+@app.route('/api/tags/list/<int:page>')
+def get_tags_list(page):
+    tags = app.calibredb_wrap.list_tags(limit=25, page=page)
+    return jsonify(tags)
+
+@app.route('/api/series/list', defaults={'page': 1})
+@app.route('/api/series/list/<int:page>')
+def get_series_list(page):
+    series = app.calibredb_wrap.list_series(limit=25, page=page)
+    return jsonify(series)
+
 # File serving
 
 @app.route('/js/<path:path>')
