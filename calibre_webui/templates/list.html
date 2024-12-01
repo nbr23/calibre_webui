@@ -9,15 +9,29 @@
   <div class="col-6">
     <h2>{{title}}</h2><br/>
     <table class="table table-hover">
-      <tbody>
-        {% for item in itemlist %}
-        <tr>
-          <td><span class="badge badge-info badge-pill">{{item.count}}</span></td>
-          <td><a href="{{ url_for('index', search=item.name, search_scope=scope)}}">{{item.name}}</a></td>
-        </tr>
-        {% endfor %}
+      <tbody id="itemList">
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/{{ scope }}/list')
+        .then(response => response.json())
+        .then(items => {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = items.map(item => `
+                <tr>
+                    <td><span class="badge badge-info badge-pill">${item.count}</span></td>
+                    <td><a href="${window.location.pathname}?search=${encodeURIComponent(item.name)}&search_scope=${encodeURIComponent('{{scope}}')}">${item.name}</a></td>
+                </tr>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('itemList').innerHTML = '<tr><td colspan="2">Error loading items</td></tr>';
+        });
+});
+</script>
 {% endblock %}

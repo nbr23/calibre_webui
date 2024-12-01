@@ -56,19 +56,19 @@ def clear_tasks():
 @app.route('/api/authors/list', defaults={'page': 1})
 @app.route('/api/authors/list/<int:page>')
 def get_authors_list(page):
-    authors = app.calibredb_wrap.list_authors(limit=25, page=page)
+    authors = app.calibredb_wrap.list_authors()
     return jsonify(authors)
 
 @app.route('/api/tags/list', defaults={'page': 1})
 @app.route('/api/tags/list/<int:page>')
 def get_tags_list(page):
-    tags = app.calibredb_wrap.list_tags(limit=25, page=page)
+    tags = app.calibredb_wrap.list_tags()
     return jsonify(tags)
 
 @app.route('/api/series/list', defaults={'page': 1})
 @app.route('/api/series/list/<int:page>')
 def get_series_list(page):
-    series = app.calibredb_wrap.list_series(limit=25, page=page)
+    series = app.calibredb_wrap.list_series()
     return jsonify(series)
 
 # File serving
@@ -183,20 +183,17 @@ def list_tasks():
 
 @app.route('/authors')
 def list_authors():
-    authors = app.calibredb_wrap.list_authors()
-    return render_template('list.html', itemlist=authors,
+    return render_template('list.html',
             title='Authors list', scope='authors', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/tags')
 def list_tags():
-    tags = app.calibredb_wrap.list_tags()
-    return render_template('list.html', itemlist=tags,
+    return render_template('list.html',
             title='Tags list', scope='tags', calibre_version=CalibreDBW.get_calibre_version())
 
 @app.route('/series')
 def list_series():
-    series = app.calibredb_wrap.list_series()
-    return render_template('list.html', itemlist=series,
+    return render_template('list.html',
             title='Series list', scope='series', calibre_version=CalibreDBW.get_calibre_version())
 
 # Books
