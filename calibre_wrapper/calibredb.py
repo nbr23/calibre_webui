@@ -187,13 +187,12 @@ class CalibreDBW:
                 select_columns.append(series)
                 select_columns.append(self._tables['books'].c.series_index)
 
-            if not attribute or attribute == 'tags':
-                tags = select(group_concat(self._tables['tags'].c.name, ', '))\
-                        .select_from(self._tables['tags'].join(self._tables['books_tags_link'],
-                            self._tables['books_tags_link'].c.tag == self._tables['tags'].c.id))\
-                        .where(self._tables['books_tags_link'].c.book == self._tables['books'].c.id)\
-                        .label('tags')
-                select_columns.append(tags)
+            tags = select(group_concat(self._tables['tags'].c.name, ', '))\
+                    .select_from(self._tables['tags'].join(self._tables['books_tags_link'],
+                        self._tables['books_tags_link'].c.tag == self._tables['tags'].c.id))\
+                    .where(self._tables['books_tags_link'].c.book == self._tables['books'].c.id)\
+                    .label('tags')
+            select_columns.append(tags)
 
             query = select(*select_columns)
             query = query.select_from(self._tables['books'].join(self._tables['Data'], self._tables['Data'].c.book == self._tables['books'].c.id))
