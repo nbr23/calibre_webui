@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+set -e
+
 # If the library database doesn't exist, we create an empty one
 if ! [ -f /data/calibre_library/metadata.db ]; then
   cat /usr/share/calibre/metadata_sqlite.sql | sqlite3 /data/calibre_library/metadata.db;

@@ -1,5 +1,7 @@
 #! /usr/bin/env sh
 
+set -e
+
 # Download required web frontend libraries
 mkdir -p calibre_webui/static/css/ && mkdir calibre_webui/static/js/
 wget -q https://code.jquery.com/jquery-3.6.0.min.js -O calibre_webui/static/js/jquery.min.js

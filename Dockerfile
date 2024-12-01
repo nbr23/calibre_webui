@@ -29,7 +29,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 RUN apt update \
   && apt -y --no-install-recommends install tzdata calibre locales \
-  && apt clean \ \
+  && apt clean \
   && rm -rf /var/lib/apt/lists/* \
   && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen en_US.UTF-8 \
   && useradd -ms /bin/bash -u ${CALIBRE_UID} -g www-data calibre \
