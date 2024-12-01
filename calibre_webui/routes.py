@@ -51,7 +51,7 @@ def get_tasks_count():
 @app.route('/api/tasks/clear')
 def clear_tasks():
     app.calibredb_wrap.clear_tasks()
-    return jsonify({})
+    return jsonify({'status': 'ok'})
 
 # File serving
 
