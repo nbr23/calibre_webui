@@ -220,10 +220,34 @@ class CalibreDBW:
                         case 'series':
                             query = query.where(series.ilike(f'%{search}%'))
                         case 'tags':
-                            query = query.where(
-                                or_(*[tags.contains(search_tag)
-                                    for search_tag in search.split(',')])
-                            )
+                            search_tags = search.split(',')
+                            include_tags = [tag for tag in search_tags if not tag.startswith('-')]
+                            exclude_tags = [tag[1:] for tag in search_tags if tag.startswith('-')]
+
+                            conditions = []
+                            if include_tags:
+                                conditions.append(or_(*[
+                                    or_(
+                                        tags == tag,
+                                        tags.like(f'{tag},%'),
+                                        tags.like(f'%, {tag},%'),
+                                        tags.like(f'%, {tag}')
+                                    )
+                                    for tag in include_tags
+                                ]))
+                            if exclude_tags:
+                                conditions.append(and_(*[
+                                    ~or_(
+                                        tags == tag,
+                                        tags.like(f'{tag},%'),
+                                        tags.like(f'%, {tag},%'),
+                                        tags.like(f'%, {tag}')
+                                    )
+                                    for tag in exclude_tags
+                                ]))
+
+                            if conditions:
+                                query = query.where(and_(*conditions))
                 else:
                     query = query.where(
                         or_(
