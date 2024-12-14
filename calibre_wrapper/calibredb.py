@@ -237,11 +237,14 @@ class CalibreDBW:
                                 ]))
                             if exclude_tags:
                                 conditions.append(and_(*[
-                                    ~or_(
-                                        tags == tag,
-                                        tags.like(f'{tag},%'),
-                                        tags.like(f'%, {tag},%'),
-                                        tags.like(f'%, {tag}')
+                                    or_(
+                                        tags.is_(None),
+                                        ~or_(
+                                            tags == tag,
+                                            tags.like(f'{tag},%'),
+                                            tags.like(f'%, {tag},%'),
+                                            tags.like(f'%, {tag}')
+                                        )
                                     )
                                     for tag in exclude_tags
                                 ]))
