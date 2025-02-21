@@ -7,17 +7,27 @@ WORKDIR /build
 COPY ./bootstrap.sh /build/
 RUN ./bootstrap.sh
 
-FROM ubuntu:${UBUNTU_VERSION} AS python_env
-ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc python3-dev python3-venv \
+FROM ubuntu:${UBUNTU_VERSION} AS python
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/opt/python-env/bin:$PATH"
+
+RUN apt update && \
+    apt install -y --no-install-recommends python3 python3-pip \
+    && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN python3 -m venv /opt/python-env && PATH="/opt/python-env/bin:$PATH" pip3 install --no-cache-dir -r requirements.txt
+FROM python AS python_env
 
-FROM ubuntu:${UBUNTU_VERSION}
+RUN apt update && \
+    apt install -y --no-install-recommends gcc python3-dev
+
+COPY requirements.txt .
+RUN python3 -m pip install uv --break-system-packages \
+    && uv venv /opt/python-env \
+    && uv pip install --no-cache-dir -r requirements.txt
+
+FROM python
 
 EXPOSE 8000
 ARG CALIBRE_UID=112
@@ -37,9 +47,8 @@ RUN apt update \
 
 WORKDIR /var/www/calibre_webui
 
-COPY --from=bootstrap /build/calibre_webui /var/www/calibre_webui/calibre_webui
 COPY --from=python_env /opt/python-env /opt/python-env
-ENV PATH="/opt/python-env/bin:$PATH"
+COPY --from=bootstrap /build/calibre_webui /var/www/calibre_webui/calibre_webui
 
 COPY ./run_app.sh calibre_webui.ini calibre_webui.py ./
 COPY ./calibre_webui ./calibre_webui
