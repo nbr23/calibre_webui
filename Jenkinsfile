@@ -16,6 +16,7 @@ pipeline {
         }
 
         stage('Dockerhub login') {
+			when { branch 'master' }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_CREDENTIALS_USR', passwordVariable: 'DOCKERHUB_CREDENTIALS_PSW')]) {
                     sh 'docker login -u $DOCKERHUB_CREDENTIALS_USR -p "$DOCKERHUB_CREDENTIALS_PSW"'
@@ -23,6 +24,7 @@ pipeline {
             }
         }
         stage('Build and push Docker Image') {
+			when { branch 'master' }
             steps {
                 sh '''
                     BUILDER=`docker buildx create --use`
