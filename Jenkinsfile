@@ -24,11 +24,10 @@ pipeline {
             }
         }
         stage('Build and push Docker Image') {
-			when { branch 'master' }
             steps {
                 sh '''
                     BUILDER=`docker buildx create --use`
-                    docker buildx build --platform linux/arm64 -t nbr23/calibre_webui:latest -t nbr23/calibre_webui:`git rev-parse --short HEAD` --push .
+                    docker buildx build --platform linux/arm64 -t nbr23/calibre_webui:latest -t nbr23/calibre_webui:`git rev-parse --short HEAD` ${ "$GIT_BRANCH" == "master" ? "--push" : ""} .
                     docker buildx rm $BUILDER
                     '''
             }
