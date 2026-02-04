@@ -1,4 +1,4 @@
-ARG UBUNTU_VERSION=24.10
+ARG UBUNTU_VERSION=25.10
 FROM alpine AS bootstrap
 
 RUN apk add --no-cache wget unzip
