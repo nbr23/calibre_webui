@@ -20,11 +20,12 @@ RUN apt update && \
 FROM python AS python_env
 
 RUN apt update && \
-    apt install -y --no-install-recommends gcc python3-dev
+    apt install -y --no-install-recommends g++ python3-dev
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
 
 COPY requirements.txt .
-RUN python3 -m pip install uv --break-system-packages \
-    && uv venv /opt/python-env \
+RUN uv venv /opt/python-env \
     && uv pip install --no-cache-dir -r requirements.txt
 
 FROM python
