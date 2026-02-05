@@ -178,14 +178,13 @@ class CalibreDBW:
                             .label('authors')
                 select_columns.append(author)
 
-            if not attribute or attribute == 'series':
-                series = select(self._tables['series'].c.name)\
-                        .select_from(self._tables['series'].join(self._tables['books_series_link'],
-                            self._tables['books_series_link'].c.series == self._tables['series'].c.id))\
-                        .where(self._tables['books_series_link'].c.book == self._tables['books'].c.id)\
-                        .label('series')
-                select_columns.append(series)
-                select_columns.append(self._tables['books'].c.series_index)
+            series = select(self._tables['series'].c.name)\
+                    .select_from(self._tables['series'].join(self._tables['books_series_link'],
+                        self._tables['books_series_link'].c.series == self._tables['series'].c.id))\
+                    .where(self._tables['books_series_link'].c.book == self._tables['books'].c.id)\
+                    .label('series')
+            select_columns.append(series)
+            select_columns.append(self._tables['books'].c.series_index)
 
             tags = select(group_concat(self._tables['tags'].c.name, ', '))\
                     .select_from(self._tables['tags'].join(self._tables['books_tags_link'],
@@ -202,11 +201,9 @@ class CalibreDBW:
                                 for f in book_format.split(',')]
                 query = query.where(or_(*format_conditions))
 
-            group_by_columns = [self._tables['books'].c.id, self._tables['books'].c.title, self._tables['books'].c.has_cover]
+            group_by_columns = [self._tables['books'].c.id, self._tables['books'].c.title, self._tables['books'].c.has_cover, series, self._tables['books'].c.series_index]
             if not attribute or attribute == 'authors' or search:
                 group_by_columns.append(author)
-            if not attribute or attribute == 'series':
-                group_by_columns.extend([series, self._tables['books'].c.series_index])
             if not attribute or attribute == 'tags':
                 group_by_columns.append(tags)
 
