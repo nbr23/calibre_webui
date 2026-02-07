@@ -175,6 +175,13 @@ def device_feed_get_cover(device_id, book_id):
         return redirect(url_for("device_register"))
     return get_cover(book_id)
 
+@app.route('/feeds/<device_id>/books/<int:book_id>/thumb')
+def device_feed_get_thumb(device_id, book_id):
+    device = app.database.get_device(device_id)
+    if not device:
+        return redirect(url_for("device_register"))
+    return get_thumb(book_id)
+
 # List views
 @app.route('/tasks')
 def list_tasks():

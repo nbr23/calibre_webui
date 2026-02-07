@@ -80,7 +80,7 @@
       <div class="book-item">
         <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=preferred_book_format, device_id=device_id) }}">
           <div class="book-cover-container">
-            <img class="cover" src="{{ url_for('device_feed_get_cover', device_id=device_id, book_id=book.id) }}"/>
+            <img class="cover" loading="lazy" src="{{ url_for('device_feed_get_thumb', device_id=device_id, book_id=book.id) }}"/>
             {% if book.read %}
               <span class="read-banner">READ</span>
             {% endif %}
