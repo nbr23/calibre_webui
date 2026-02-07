@@ -7,6 +7,15 @@
 {% block body %}
 <h2 class="text-center mb-4">{{title}}</h2>
 <div class="row" id="books_list">
+  {% for i in range(12) %}
+  <div class="col-sm-3 col-lg-2 col-6 skeleton-placeholder">
+    <div class="skeleton-card">
+      <div class="skeleton-cover"></div>
+      <div class="skeleton-line" style="width: 80%;"></div>
+      <div class="skeleton-line" style="width: 50%;"></div>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 <div class="text-center mb-3">
   <button onclick="load_more_books();" class="btn btn-info" id="load_more">Load more</button>
@@ -25,6 +34,7 @@
       $('#books_list').html('<div class="col-sm-12 col-lg-12 col-xs-12 "><center><h3 class="text-empty">No books found!</h3></center></div>');
       return;
     }
+    $('.skeleton-placeholder').remove();
     books_list = $('#books_list').html();
     for (i = 0; i < data.length; i++) {
       authors = [];
@@ -54,11 +64,12 @@
   });
     };
 
+  load_more_books();
   $(window).on('scroll', function () {
     if ($(window).scrollTop() >= $(document).height() - $(window).height()) {
       load_more_books();
     }
-  }).scroll();
+  });
 
 </script>
 {% endblock %}
