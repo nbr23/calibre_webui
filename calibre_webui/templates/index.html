@@ -5,16 +5,11 @@
 {% endblock %}
 
 {% block body %}
-<center>
-  <h2>{{title}}</h2>
-</center><br />
-<div class="row justify-content-md-center" id="books_list">
+<h2 class="text-center mb-4">{{title}}</h2>
+<div class="row" id="books_list">
 </div>
-<div class="row justify-content-md-center">
-  <div class="text-center">
-    <button style="margin-bottom: 10px;" onclick="load_more_books();" class="btn btn-info" id="load_more">Load
-      more</button>
-  </div>
+<div class="text-center mb-3">
+  <button onclick="load_more_books();" class="btn btn-info" id="load_more">Load more</button>
 </div>
 {% endblock %}
 {% block javascript %}
@@ -38,17 +33,20 @@
         authors.push('<a class="book-author-link" href="{{ url_for('index')}}?search=' + authors_split[k] + '&search_scope=authors">' + authors_split[k] + '</a>');
       }
       authors = authors.join(' - ');
-      books_list += '<div class="col-sm-3 col-lg-2 col-xs-6 ">' +
+      books_list += '<div class="col-sm-3 col-lg-2 col-6">' +
+        '<div class="book-card">' +
         '<a href="/books/' + data[i]['id'] + '/edit">' +
         '<div class="book-cover-container">' +
-        '<img class="cover mx-auto d-block" src="/books/' + data[i]['id'] + '/cover"/>' +
+        '<img class="cover" loading="lazy" src="/books/' + data[i]['id'] + '/cover"/>' +
         `${data[i]['read'] ? '<span class="read-banner">READ</span>' : ''}` +
         '</div>' +
-        '</a><br/>' +
-        '<center>' +
-        '<p><a class="book-title-link" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a>' + (data[i]['series'] ? ` <a class="book-series-link" href="?search=${data[i]['series']}&search_scope=series">#${data[i]['series_index']}</a>` : '') + '</br>' +
-        authors + '</p>' +
-        '</center>' +
+        '</a>' +
+        '<div class="book-card-info">' +
+        '<a class="book-title-link" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a>' +
+        (data[i]['series'] ? ` <a class="book-series-link" href="?search=${data[i]['series']}&search_scope=series">#${data[i]['series_index']}</a>` : '') +
+        '<br/>' + authors +
+        '</div>' +
+        '</div>' +
         '</div>';
     }
     $("#books_list").html(books_list);
