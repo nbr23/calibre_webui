@@ -155,7 +155,7 @@ class CalibreDBW:
         except subprocess.CalledProcessError:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
-    def search_books(self, search, attribute, page=1, limit=20, book_format=None):
+    def search_books(self, search, attribute, page=1, limit=21, book_format=None):
         with self._session() as session:
             formats = select(func.group_concat(self._tables['Data'].c.format, ','))\
                 .where(self._tables['Data'].c.book == self._tables['books'].c.id)\
