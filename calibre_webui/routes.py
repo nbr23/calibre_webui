@@ -2,6 +2,7 @@ from flask import render_template, request, send_from_directory, \
         jsonify, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from urllib.parse import urljoin
+from PIL import Image
 import os
 
 from calibre_webui import app
@@ -330,6 +331,29 @@ def get_cover(book_id):
             app.config['CALIBRE_LIBRARY_PATH'], book.path),
             'cover.jpg')
     return redirect('/static/img/default_cover.jpg')
+
+THUMB_HEIGHT = 400
+
+@app.route('/books/<int:book_id>/thumb')
+def get_thumb(book_id):
+    book = app.calibredb_wrap.get_book(book_id)
+    if not book or not book.has_cover:
+        return redirect('/static/img/default_cover.jpg')
+
+    book_dir = os.path.join(app.config['CALIBRE_LIBRARY_PATH'], book.path)
+    thumb_path = os.path.join(book_dir, 'thumb.jpg')
+
+    if not os.path.exists(thumb_path):
+        cover_path = os.path.join(book_dir, 'cover.jpg')
+        try:
+            img = Image.open(cover_path)
+            ratio = THUMB_HEIGHT / img.height
+            img = img.resize((int(img.width * ratio), THUMB_HEIGHT), Image.LANCZOS)
+            img.save(thumb_path, 'JPEG', quality=80)
+        except Exception:
+            return send_from_directory(book_dir, 'cover.jpg')
+
+    return send_from_directory(book_dir, 'thumb.jpg')
 
 @app.route('/books/<int:book_id>/file/<book_format>/')
 def download_book_file(book_id, book_format):
