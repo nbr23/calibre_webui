@@ -9,19 +9,55 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.css') }}"/>
 
 <style>
-.sidebar {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 100; /* Behind the navbar */
-  padding: 100px 0 0; /* Height of navbar */
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+:root {
+  --color-brand: #0d9488;
+  --color-brand-hover: #0f766e;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --color-text-empty: #94a3b8;
+  --color-heading: #0f172a;
+  --color-accent: #22c55e;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-shadow: rgba(15, 23, 42, 0.08);
+  --color-shadow-heavy: rgba(15, 23, 42, 0.15);
+  --color-link: #0d9488;
+  --color-link-hover: #0f766e;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-heading);
+  font-weight: 600;
+}
+
+a {
+  color: var(--color-link);
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--color-link-hover);
+  text-decoration: none;
+}
+
+code {
+  font-family: var(--font-mono);
 }
 
 .cover {
-  box-shadow: 7px 7px 20px grey;
-  height:250px;
+  box-shadow: 0 4px 12px var(--color-shadow), 0 1px 3px var(--color-shadow);
+  height: 250px;
   max-width: 100%;
 }
 
@@ -33,12 +69,46 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #22c55e;
+  background: var(--color-accent);
   color: white;
   padding: 2px 8px;
   font-size: 12px;
   font-weight: bold;
   border-radius: 3px;
+}
+
+.book-title-link {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.book-title-link:hover {
+  color: var(--color-brand);
+}
+
+.book-author-link {
+  color: var(--color-brand);
+  font-size: 90%;
+}
+
+.book-author-link:hover {
+  color: var(--color-brand-hover);
+}
+
+.book-series-link {
+  color: var(--color-text-muted);
+}
+
+.book-series-link:hover {
+  color: var(--color-brand);
+}
+
+.text-empty {
+  color: var(--color-text-empty);
+}
+
+.text-muted-custom {
+  color: var(--color-text-muted);
 }
 </style>
 
@@ -76,7 +146,7 @@
               <a class="nav-link" href="{{ url_for('device_list') }}">Devices</a>
             </li>
             <li class="nav-item">
-              <span class="nav-link"><em>powered by Calibre {{ calibre_version }}</em></span>
+              <span class="nav-link" style="color: var(--color-text-muted);"><em>powered by Calibre {{ calibre_version }}</em></span>
             </li>
           </ul>
           <form class="form-inline mr-4" method="GET" action="{{ url_for('index') }}">

@@ -27,7 +27,7 @@
   +'&search_scope={{ scope }}'{% endif %}, function (data) {
     if (data.length == 0) {
       $("#load_more").hide();
-      $('#books_list').html('<div class="col-sm-12 col-lg-12 col-xs-12 "><center><h3 style="color: gray">No books found!</32></center></div>');
+      $('#books_list').html('<div class="col-sm-12 col-lg-12 col-xs-12 "><center><h3 class="text-empty">No books found!</h3></center></div>');
       return;
     }
     books_list = $('#books_list').html();
@@ -35,7 +35,7 @@
       authors = [];
       authors_split = data[i]['authors'].split(';');
       for (k = 0; k < authors_split.length; k++) {
-        authors.push('<a style="color: #00aaaa; font-size: 90%;" href="{{ url_for('index')}}?search=' + authors_split[k] + '&search_scope=authors">' + authors_split[k] + '</a>');
+        authors.push('<a class="book-author-link" href="{{ url_for('index')}}?search=' + authors_split[k] + '&search_scope=authors">' + authors_split[k] + '</a>');
       }
       authors = authors.join(' - ');
       books_list += '<div class="col-sm-3 col-lg-2 col-xs-6 ">' +
@@ -46,7 +46,7 @@
         '</div>' +
         '</a><br/>' +
         '<center>' +
-        '<p><a style="color: #000000; font-size: 100%;" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a>' + (data[i]['series'] ? ` <a style="color: #aaaaaa; font-size: 100%;" href="?search=${data[i]['series']}&search_scope=series">#${data[i]['series_index']}</a>` : '') + '</br>' +
+        '<p><a class="book-title-link" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a>' + (data[i]['series'] ? ` <a class="book-series-link" href="?search=${data[i]['series']}&search_scope=series">#${data[i]['series_index']}</a>` : '') + '</br>' +
         authors + '</p>' +
         '</center>' +
         '</div>';
