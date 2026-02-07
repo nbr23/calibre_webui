@@ -4,32 +4,36 @@
 {% endblock %}
 
 {% block body %}
-
-<div class="row justify-content-md-center">
-  <div class="col-6">
-    <h2>{{title}} - <button onclick="clear_tasks();" class="btn btn-outline-info btn-sm">Clear</button></h2><br/>
-    <table class="table table-hover">
-      <tbody id='taskslist'>
-      </tbody>
-    </table>
+<div class="list-panel">
+  <div class="list-panel-header">
+    <h2>{{title}}</h2>
+    <button onclick="clear_tasks();" class="btn-clear">Clear</button>
+  </div>
+  <div id="taskslist">
+    <div class="list-empty">Loading...</div>
   </div>
 </div>
 {% endblock %}
 {% block javascript %}
   <script type="text/javascript">
     var clear_tasks = function() {$.getJSON('{{url_for("clear_tasks")}}');};
+    var status_class = {'COMPLETED': 'status-completed', 'RUNNING': 'status-running', 'CANCELED': 'status-canceled'};
     var fetch_tasks = function() {$.getJSON('{{url_for("get_tasks_list")}}', function (data) {
-      tasks = '';
-      status_list = {'COMPLETED': 'success', 'RUNNING': 'info', 'CANCELED': 'danger'};
-      for (i = 0; i < data.length; i++)
-      {
-        tasks += '<tr><td><span class="badge badge-' + status_list[data[i].status] + '">' + data[i].status + '</span></td><td>' + data[i].message + '</td></tr>';
+      if (data.length === 0) {
+        $("#taskslist").html('<div class="list-empty">No tasks</div>');
+        return;
+      }
+      var tasks = '';
+      for (var i = 0; i < data.length; i++) {
+        tasks += '<div class="list-item">' +
+          '<span class="status-badge ' + status_class[data[i].status] + '">' + data[i].status + '</span>' +
+          '<span class="list-item-message">' + data[i].message + '</span>' +
+          '</div>';
       }
       $("#taskslist").html(tasks);
       });
     };
     fetch_tasks();
     window.setInterval(fetch_tasks, 5000);
-
   </script>
 {% endblock %}

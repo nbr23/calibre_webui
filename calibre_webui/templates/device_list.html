@@ -4,33 +4,25 @@
 {% endblock %}
 
 {% block body %}
-
-<div class="row justify-content-md-center">
-  <div class="col-6">
-    <h2>{{title}}</h2><br/>
-    <p>Visit <code>{{url}}</code> now on your device to enroll it!</p>
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <td>Device ID</td>
-          <td>Device Name</td>
-          <td>Formats</td>
-          <td></td>
-          <td></td>
-        </tr>
-      </thead>
-      <tbody>
-        {% for device in deviceslist %}
-        <tr>
-          <td><a href="{{ url_for('device_feed', device_id=device.uid) }}">{{device.uid}}</a></td>
-          <td>{{device.name}}</td>
-          <td>{{device.formats}}</td>
-          <td><a type="button" class="btn btn-success" href="{{ url_for('device_edit', device_id=device.uid) }}">Edit</a></td>
-          <td><a type="button" class="btn btn-danger" href="{{ url_for('device_delete', device_id=device.uid) }}">Delete</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<div class="list-panel">
+  <div class="list-panel-header">
+    <h2>{{title}}</h2>
   </div>
+  <div class="panel-info">Enroll a new device by visiting <code>{{url}}</code> on the device.</div>
+  {% for device in deviceslist %}
+  <div class="list-item">
+    <div class="device-meta">
+      <a class="device-name" href="{{ url_for('device_feed', device_id=device.uid) }}">{{device.name}}</a>
+      <div class="device-detail"><code>{{device.uid}}</code> &middot; {{device.formats}}</div>
+    </div>
+    <div class="device-actions">
+      <a class="btn-action btn-action-edit" href="{{ url_for('device_edit', device_id=device.uid) }}">Edit</a>
+      <a class="btn-action btn-action-delete" href="{{ url_for('device_delete', device_id=device.uid) }}">Delete</a>
+    </div>
+  </div>
+  {% endfor %}
+  {% if not deviceslist %}
+  <div class="list-empty">No devices enrolled</div>
+  {% endif %}
 </div>
 {% endblock %}

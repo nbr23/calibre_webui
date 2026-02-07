@@ -5,13 +5,12 @@
 {% endblock %}
 
 {% block body %}
-<div class="row justify-content-md-center">
-  <div class="col-6">
-    <h2>{{title}}</h2><br/>
-    <table class="table table-hover">
-      <tbody id="itemList">
-      </tbody>
-    </table>
+<div class="list-panel">
+  <div class="list-panel-header">
+    <h2>{{title}}</h2>
+  </div>
+  <div id="itemList">
+    <div class="list-empty">Loading...</div>
   </div>
 </div>
 
@@ -20,17 +19,22 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/{{ scope }}/list')
         .then(response => response.json())
         .then(items => {
-            const itemList = document.getElementById('itemList');
-            itemList.innerHTML = items.map(item => `
-                <tr>
-                    <td><span class="badge badge-info badge-pill">${item.count}</span></td>
-                    <td><a href="${window.location.pathname}?search=${encodeURIComponent(item.name)}&search_scope=${encodeURIComponent('{{scope}}')}">${item.name}</a></td>
-                </tr>
-            `).join('');
+            var itemList = document.getElementById('itemList');
+            if (items.length === 0) {
+                itemList.innerHTML = '<div class="list-empty">No items found</div>';
+                return;
+            }
+            itemList.innerHTML = items.map(item =>
+                '<div class="list-item">' +
+                    '<span class="list-item-count">' + item.count + '</span>' +
+                    '<div class="list-item-name">' +
+                        '<a href="/?search=' + encodeURIComponent(item.name) + '&search_scope=' + encodeURIComponent('{{scope}}') + '">' + item.name + '</a>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
         })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('itemList').innerHTML = '<tr><td colspan="2">Error loading items</td></tr>';
+        .catch(function() {
+            document.getElementById('itemList').innerHTML = '<div class="list-empty">Error loading items</div>';
         });
 });
 </script>
