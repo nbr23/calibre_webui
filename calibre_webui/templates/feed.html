@@ -1,18 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo="/>
-    <title>Calibre | {{ title }}</title>
     <meta charset="utf-8">
+    <title>Calibre | {{ title }}</title>
     <style>
-    .cover {
-      height:300px;
-      max-width: 100%;
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
     }
-    td {
-      padding: 10px;
-      max-width: 200px;
-      word-wrap: break-word;
+    h1 {
+      text-align: center;
+    }
+    h1 a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .book-item {
+      text-align: center;
+    }
+    .book-item a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .cover {
+      height: 300px;
+      max-width: 100%;
+      display: block;
+      margin: 0 auto;
     }
     .book-cover-container {
       position: relative;
@@ -28,21 +50,32 @@
       font-weight: bold;
       border-radius: 3px;
     }
+    .book-title {
+      margin-top: 10px;
+      word-wrap: break-word;
+    }
+    .book-formats {
+      margin-top: 5px;
+      font-size: 14px;
+    }
+    .next-link {
+      text-align: center;
+      margin-top: 40px;
+    }
+    .next-link a {
+      text-decoration: none;
+      color: inherit;
+    }
     </style>
-    <title>{{title}}</title>
   </head>
 
   <body>
-    <center>
     <h1><a href="{{ url_for('device_feed', device_id=device_id) }}">{{title}}</a></h1>
-    <table>
+    <div class="book-grid">
     {% for book in books %}
     {% set book_formats = (preferred_formats|select("in", book.formats)|list) %}
     {% set preferred_book_format = book_formats|first %}
-    {% if loop.index % 3 == 1 %}
-    <tr>
-    {% endif %}
-      <td>
+      <div class="book-item">
         <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=preferred_book_format, device_id=device_id) }}">
           <div class="book-cover-container">
             <img class="cover" src="{{ url_for('device_feed_get_cover', device_id=device_id, book_id=book.id) }}"/>
@@ -50,21 +83,23 @@
               <span class="read-banner">READ</span>
             {% endif %}
           </div>
-          {{book.title}}
+          <div class="book-title">
+            {{book.title}}
+            {% if book.series %}<small>&nbsp;#{% if book.series_index | int == book.series_index %}{{book.series_index | int}}{% else %}{{book.series_index}}{% endif %}</small>{% endif %}
+          </div>
         </a>
-        {% if book.series %}<small>&nbsp;#{% if book.series_index | int == book.series_index %}{{book.series_index | int}}{% else %}{{book.series_index}}{% endif %}</small>{% endif %}
         {% if book_formats | length > 1 %}
+          <div class="book-formats">
           {% for f in book_formats %}
-          &nbsp;<a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=f, device_id=device_id) }}">{{f}}</a>
+            <a href="{{ url_for('device_feed_download_book_file', book_id=book.id, book_format=f, device_id=device_id) }}">{{f}}</a>
           {% endfor %}
+          </div>
         {% endif %}
-      </td>
-    {% if loop.index % 3 == 0 %}
-    </tr>
-    {% endif %}
+      </div>
     {% endfor %}
-    </table>
-    <h1><a href="{{ url_for('device_feed', device_id=device_id, page=(page+1)) }}">Next</a></h1>
-    </center>
+    </div>
+    <div class="next-link">
+      <h1><a href="{{ url_for('device_feed', device_id=device_id, page=(page+1)) }}">Next</a></h1>
+    </div>
   </body>
 </html>
