@@ -6,9 +6,9 @@
 
 {% block body %}
 <h2 class="text-center mb-4">{{title}}</h2>
-<div class="row" id="books_list">
+<div class="books-grid" id="books_list">
   {% for i in range(12) %}
-  <div class="col-sm-3 col-lg-2 col-6 skeleton-placeholder">
+  <div class="skeleton-placeholder">
     <div class="skeleton-card">
       <div class="skeleton-cover"></div>
       <div class="skeleton-line" style="width: 80%;"></div>
@@ -31,7 +31,7 @@
   +'&search_scope={{ scope }}'{% endif %}, function (data) {
     if (data.length == 0) {
       $("#load_more").hide();
-      $('#books_list').html('<div class="col-sm-12 col-lg-12 col-xs-12 "><center><h3 class="text-empty">No books found!</h3></center></div>');
+      $('#books_list').html('<div style="grid-column:1/-1;text-align:center"><h3 class="text-empty">No books found!</h3></div>');
       return;
     }
     $('.skeleton-placeholder').remove();
@@ -43,8 +43,7 @@
         authors.push('<a class="book-author-link" href="{{ url_for('index')}}?search=' + authors_split[k] + '&search_scope=authors">' + authors_split[k] + '</a>');
       }
       authors = authors.join(' - ');
-      books_list += '<div class="col-sm-3 col-lg-2 col-6">' +
-        '<div class="book-card">' +
+      books_list += '<div class="book-card">' +
         '<a href="/books/' + data[i]['id'] + '/edit">' +
         '<div class="book-cover-container">' +
         '<img class="cover" loading="lazy" src="/books/' + data[i]['id'] + '/thumb"/>' +
@@ -55,7 +54,6 @@
         '<a class="book-title-link" href="/books/' + data[i]['id'] + '/edit">' + trim_str(data[i]['title']) + '</a>' +
         (data[i]['series'] ? ` <a class="book-series-link" href="?search=${data[i]['series']}&search_scope=series">#${data[i]['series_index']}</a>` : '') +
         '<br/>' + authors +
-        '</div>' +
         '</div>' +
         '</div>';
     }
