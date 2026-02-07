@@ -11,6 +11,8 @@
     }
     td {
       padding: 10px;
+      max-width: 200px;
+      word-wrap: break-word;
     }
     .book-cover-container {
       position: relative;
@@ -48,7 +50,7 @@
               <span class="read-banner">READ</span>
             {% endif %}
           </div>
-          {{book.title | truncate(30)}}
+          {{book.title}}
         </a>
         {% if book.series %}<small>&nbsp;#{% if book.series_index | int == book.series_index %}{{book.series_index | int}}{% else %}{{book.series_index}}{% endif %}</small>{% endif %}
         {% if book_formats | length > 1 %}
