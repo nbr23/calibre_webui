@@ -166,13 +166,123 @@ code {
   background: var(--color-border);
   margin-top: 10px;
 }
+
+.navbar-refreshed {
+  padding: 0.25rem 1rem;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.navbar-refreshed .navbar-brand {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.navbar-refreshed .nav-link {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.55rem;
+}
+
+.navbar-refreshed .navbar-toggler {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.navbar-version {
+  font-size: 0.7rem;
+  opacity: 0.4;
+}
+
+.upload-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.upload-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+}
+
+.search-hero {
+  max-width: 540px;
+  margin: 0 auto 1.5rem;
+}
+
+.search-hero-inner {
+  display: flex;
+  background: var(--color-surface);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px var(--color-shadow);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.search-hero-inner:focus-within {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.search-hero input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: 0.55rem 1rem;
+  font-size: 0.92rem;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.search-hero select {
+  border: none;
+  border-left: 1px solid var(--color-border);
+  padding: 0.55rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search-hero button[type="submit"] {
+  border: none;
+  background: var(--color-brand);
+  color: white;
+  padding: 0.55rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.search-hero button[type="submit"]:hover {
+  background: var(--color-brand-hover);
+}
 </style>
 
    {% block header %}{% endblock %}
   </head>
   <body>
     <header>
-      <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+      <nav class="navbar navbar-expand-md navbar-dark fixed-top navbar-refreshed">
         <a class="navbar-brand" href="/">Calibre</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -202,30 +312,33 @@ code {
               <a class="nav-link" href="{{ url_for('device_list') }}">Devices</a>
             </li>
             <li class="nav-item">
-              <span class="nav-link" style="color: var(--color-text-muted);"><em>powered by Calibre {{ calibre_version }}</em></span>
+              <span class="nav-link navbar-version"><em>v{{ calibre_version }}</em></span>
             </li>
           </ul>
-          <form class="form-inline mr-4" method="GET" action="{{ url_for('index') }}">
-            <div class="input-group">
-              <input style="width: 300px" class="form-control mr-sm-0" type="text" name="search" placeholder="Search" aria-label="Search" value="{% if search != None %}{{search}}{%endif%}">
-              <select style="width: 120px" class="input-group-append form-control mr-sm-2" name="search_scope">
-                <option {% if scope|lower == "books" %}selected{% endif %}>Books</option>
-                <option {% if scope|lower == "authors" %}selected{% endif %}>Authors</option>
-                <option {% if scope|lower == "tags" %}selected{% endif %}>Tags</option>
-                <option {% if scope|lower == "series" %}selected{% endif %}>Series</option>
-              </select>
-              <button class="btn btn-outline-success" type="submit">Search</button>
-            </div>
-          </form>
-          <form id="navbar-upload" class="form-inline mr-0" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-            <label class="btn file btn-primary">
-              Upload<input type="file" id="books_upload" name="books_upload" hidden multiple>
+          <form id="navbar-upload" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+            <label class="upload-icon-btn" title="Upload books">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+              <input type="file" id="books_upload" name="books_upload" hidden multiple>
             </label>
           </form>
         </div>
       </nav>
     </header>
-    <div class="container-fluid" style="padding:  100px 15px 0;">
+    <div class="container-fluid" style="padding: 60px 15px 0;">
+      <div class="search-hero">
+        <form method="GET" action="{{ url_for('index') }}">
+          <div class="search-hero-inner">
+            <input type="text" name="search" placeholder="Search books, authors, tags..." aria-label="Search" value="{% if search != None %}{{search}}{%endif%}">
+            <select name="search_scope">
+              <option {% if scope|lower == "books" %}selected{% endif %}>Books</option>
+              <option {% if scope|lower == "authors" %}selected{% endif %}>Authors</option>
+              <option {% if scope|lower == "tags" %}selected{% endif %}>Tags</option>
+              <option {% if scope|lower == "series" %}selected{% endif %}>Series</option>
+            </select>
+            <button type="submit">Search</button>
+          </div>
+        </form>
+      </div>
       <div class="row-fluid">
         <main role="main" class="col-md-auto ml-sm-auto col-lg-auto">
           {% with flash_msg = get_flashed_messages(with_categories=true) %}
