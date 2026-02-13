@@ -29,9 +29,11 @@ def get_books():
             if 'search' in request.args else None
     scope = request.args.get('search_scope').strip() \
             if 'search_scope' in request.args else None
+    limit = request.args.get('limit', 21, type=int)
+    limit = max(12, min(limit, 120))
     books = app.calibredb_wrap.search_books(search.lower() if search else None,
             scope.lower() if scope else None,
-            page=page)
+            page=page, limit=limit)
     if not books:
         return jsonify([])
     return jsonify([dict(book) for book in books])

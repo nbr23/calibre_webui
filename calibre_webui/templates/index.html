@@ -7,15 +7,6 @@
 {% block body %}
 <h2 class="text-center mb-4">{{title}}</h2>
 <div class="books-grid" id="books_list">
-  {% for i in range(12) %}
-  <div class="skeleton-placeholder">
-    <div class="skeleton-card">
-      <div class="skeleton-cover"></div>
-      <div class="skeleton-line" style="width: 80%;"></div>
-      <div class="skeleton-line" style="width: 50%;"></div>
-    </div>
-  </div>
-  {% endfor %}
 </div>
 <div class="text-center mb-3">
   <button onclick="load_more_books();" class="btn btn-info" id="load_more">Load more</button>
@@ -23,15 +14,43 @@
 {% endblock %}
 {% block javascript %}
 <script type="text/javascript">
+  var ROWS_TO_FETCH = 3;
   var trim_str = function (str, max = 50) { return str.length > max ? str.substring(0, max - 3) + '…' : str; }
   var page = 1;
+
+  var getGridCols = function () {
+    var grid = document.getElementById('books_list');
+    var cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+    return cols > 0 ? cols : 3;
+  };
+
+  var getLimit = function () {
+    return getGridCols() * ROWS_TO_FETCH;
+  };
+
+  var showSkeletons = function () {
+    var count = getLimit();
+    var html = '';
+    for (var i = 0; i < count; i++) {
+      html += '<div class="skeleton-placeholder"><div class="skeleton-card">' +
+        '<div class="skeleton-cover"></div>' +
+        '<div class="skeleton-line" style="width: 80%;"></div>' +
+        '<div class="skeleton-line" style="width: 50%;"></div>' +
+        '</div></div>';
+    }
+    $('#books_list').html(html);
+  };
+
   var load_more_books = function () {
+    var limit = getLimit();
     $.getJSON('{{url_for("get_books")}}?page='
-      + page {% if search %} + '&search={{ search }}'{% endif %}{% if scope %}
+      + page + '&limit=' + limit {% if search %} + '&search={{ search }}'{% endif %}{% if scope %}
   +'&search_scope={{ scope }}'{% endif %}, function (data) {
     if (data.length == 0) {
       $("#load_more").hide();
-      $('#books_list').html('<div style="grid-column:1/-1;text-align:center"><h3 class="text-empty">No books found!</h3></div>');
+      if (page == 1) {
+        $('#books_list').html('<div style="grid-column:1/-1;text-align:center"><h3 class="text-empty">No books found!</h3></div>');
+      }
       return;
     }
     $('.skeleton-placeholder').remove();
@@ -62,6 +81,7 @@
   });
     };
 
+  showSkeletons();
   load_more_books();
   $(window).on('scroll', function () {
     if ($(window).scrollTop() >= $(document).height() - $(window).height()) {
