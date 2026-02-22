@@ -419,11 +419,11 @@ class CalibreDBW:
             return session.execute(stm).first().title
 
     def get_book_file(self, book_id, book_format):
-        book_path = self.get_book(book_id).path
         with self._session() as session:
-            stm = select(self._tables['Data']).where(self._tables['Data'].c.book == book_id)
-            for fmt in session.execute(stm).fetchall():
-                if fmt.format == book_format:
-                    filename = '%s.%s' % (fmt.name, book_format.lower())
-                    filepath = os.path.join(self._calibre_lib_dir, book_path)
-                    return filepath, filename
+            stm = select(self._tables['Data'].c.name, self._tables['books'].c.path)\
+                    .join(self._tables['books'], self._tables['books'].c.id == self._tables['Data'].c.book)\
+                    .where(self._tables['Data'].c.book == book_id)\
+                    .where(self._tables['Data'].c.format == book_format)
+            row = session.execute(stm).first()
+            if row:
+                return os.path.join(self._calibre_lib_dir, row.path), '%s.%s' % (row.name, book_format.lower())
