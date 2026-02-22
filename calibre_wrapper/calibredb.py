@@ -292,32 +292,21 @@ class CalibreDBW:
         return CalibreDBW._CALIBRE_VERSION
 
     def list_books_attributes(self, attr_table, attr_link_column, limit=0, page=0):
-        attr_list = []
         a_table = self._tables[attr_table]
         books_attr_link = self._tables['books_%s_link' % attr_table]
+        link_col = getattr(books_attr_link.c, attr_link_column)
 
         with self._session() as session:
-            offset = (page - 1) * limit
-            count_query = select(func.count()).select_from(a_table)
-
-            stm = select(a_table)\
+            stm = select(a_table.c.name, func.count(books_attr_link.c.id).label('book_count'))\
+                .join(books_attr_link, link_col == a_table.c.id)\
+                .group_by(a_table.c.id)\
                 .order_by(a_table.c.name)
 
             if limit > 0 and page > 0:
-                stm = stm.limit(limit).offset(offset)
+                stm = stm.limit(limit).offset((page - 1) * limit)
 
-            for attr in session.execute(stm).fetchall():
-                count_query = select(func.count())\
-                    .select_from(books_attr_link)\
-                    .where(getattr(books_attr_link.c, attr_link_column) == attr.id)
-
-                book_count = session.execute(count_query).scalar()
-
-                attr_list.append({
-                    'name': attr.name,
-                    'count': book_count
-                })
-        return attr_list
+            return [{'name': row.name, 'count': row.book_count}
+                    for row in session.execute(stm).fetchall()]
 
     def list_tags(self, limit=0, page=0):
         return self.list_books_attributes('tags', 'tag', limit, page)
