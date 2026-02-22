@@ -197,7 +197,7 @@ class CalibreDBW:
             query = query.select_from(self._tables['books'].join(self._tables['Data'], self._tables['Data'].c.book == self._tables['books'].c.id))
 
             if book_format:
-                format_conditions = [func.upper(self._tables['Data'].c.format) == f.upper()
+                format_conditions = [self._tables['Data'].c.format == f.upper()
                                 for f in book_format.split(',')]
                 query = query.where(or_(*format_conditions))
 
