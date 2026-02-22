@@ -317,6 +317,12 @@ class CalibreDBW:
     def list_authors(self, limit=0, page=0):
         return self.list_books_attributes('authors', 'author', limit, page)
 
+    def get_book_cover_info(self, book_id):
+        with self._session() as session:
+            stm = select(self._tables['books'].c.has_cover, self._tables['books'].c.path)\
+                    .where(self._tables['books'].c.id == book_id)
+            return session.execute(stm).first()
+
     def get_book(self, book_id):
         with self._session() as session:
             author = select(group_concat(self._tables['authors'].c.name, ';'))\
