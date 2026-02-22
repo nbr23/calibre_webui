@@ -17,7 +17,7 @@ can be used for easy deployment using docker and nginx.
 
 - [Calibre](https://calibre-ebook.com/): Calibre-webui depends on Calibre to
   be installed on the system as it operates as a front-end to it.
-- Python 3.7 (Not tested with lower versions)
+- Python 3.8+
 - Python requirements can be installed with:
 `pip install -r requirements.txt`
 
