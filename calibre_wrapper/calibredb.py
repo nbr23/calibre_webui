@@ -337,14 +337,33 @@ class CalibreDBW:
                     .label('series')
             comment = select(self._tables['comments'].c.text)\
                     .where(self._tables['comments'].c.book == book_id).label('comments')
-
             isbn = select(self._tables['identifiers'].c.val)\
                     .where(and_(self._tables['identifiers'].c.book == book_id,
                         self._tables['identifiers'].c.type == 'isbn')).label('isbn')
+            tags = select(group_concat(self._tables['tags'].c.name, ', '))\
+                    .select_from(self._tables['tags'].join(self._tables['books_tags_link'],
+                        self._tables['books_tags_link'].c.tag == self._tables['tags'].c.id))\
+                    .where(self._tables['books_tags_link'].c.book == self._tables['books'].c.id)\
+                    .label('tags')
+            publisher = select(group_concat(self._tables['publishers'].c.name, ', '))\
+                    .select_from(self._tables['publishers'].join(self._tables['books_publishers_link'],
+                        self._tables['books_publishers_link'].c.publisher == self._tables['publishers'].c.id))\
+                    .where(self._tables['books_publishers_link'].c.book == self._tables['books'].c.id)\
+                    .label('publisher')
+            languages = select(group_concat(self._tables['languages'].c.lang_code, ', '))\
+                    .select_from(self._tables['languages'].join(self._tables['books_languages_link'],
+                        self._tables['books_languages_link'].c.lang_code == self._tables['languages'].c.id))\
+                    .where(self._tables['books_languages_link'].c.book == self._tables['books'].c.id)\
+                    .label('languages')
+            rating = select(self._tables['ratings'].c.rating)\
+                    .select_from(self._tables['ratings'].join(self._tables['books_ratings_link'],
+                        self._tables['books_ratings_link'].c.rating == self._tables['ratings'].c.id))\
+                    .where(self._tables['books_ratings_link'].c.book == self._tables['books'].c.id)\
+                    .label('rating')
 
             stm = select(self._tables['books'].c.title, self._tables['books'].c.path, self._tables['books'].c.pubdate,
                         self._tables['books'].c.has_cover, self._tables['books'].c.id, self._tables['books'].c.series_index,
-                        author, comment, isbn, series)\
+                        author, comment, isbn, series, tags, publisher, languages, rating)\
                     .where(self._tables['books'].c.id == book_id)
             return session.execute(stm).first()
 
@@ -389,18 +408,11 @@ class CalibreDBW:
     def get_book_details(self, book_id):
         book, formats = self.resultproxy_to_dict(self.get_book(book_id)), None
         if book:
-            tags = self.get_book_tags(book_id)
-            book['tags'] = ', '.join([tag['name'] for tag in tags])
-            book['publisher'] = ', '.join([pub['name']
-                for pub in self.get_book_publishers(book_id)])
-            book['languages'] = ', '.join([lang['lang_code']
-                for lang in self.get_book_languages(book_id)])
-            rating = self.get_book_ratings(book_id).get('rating')
-            book['rating'] = int(rating / 2) if rating else rating
-            formats = self.get_book_formats(book_id)
-            book['authors'] = ' & '.join(book['authors'].split(';'))
+            book['authors'] = ' & '.join(book['authors'].split(';')) if book['authors'] else ''
             book['series'] = ' & '.join(book['series'].split(';')) if book['series'] else ''
-            book['read'] = len([tag['name'] for tag in tags if tag['name'] == 'read']) > 0
+            book['rating'] = int(book['rating'] / 2) if book['rating'] else book['rating']
+            book['read'] = any(t.strip() == 'read' for t in (book['tags'] or '').split(','))
+            formats = self.get_book_formats(book_id)
         return (book, formats)
 
     def get_book_formats(self, book_id):
