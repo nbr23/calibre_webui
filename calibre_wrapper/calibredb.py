@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression, or_, func
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.engine import Row
-from threading import Thread
+from threading import Thread, RLock
 from tempfile import NamedTemporaryFile
 import re
 import os
@@ -62,12 +62,17 @@ class CalibreDBW:
         self._calibre_db = os.path.join(self._calibre_lib_dir, 'metadata.db')
         self._db_ng = create_engine('sqlite:///%s' % self._calibre_db)
         self._session = sessionmaker(self._db_ng)
+        self._calibredb_lock = RLock()
         self._init_tables_metadata()
         self.clear_tasks()
 
+    def _run_calibredb(self, args, **kwargs):
+        with self._calibredb_lock:
+            return subprocess.run(['calibredb'] + args, **kwargs)
+
     def add_book(self, file_path):
         book_id = -1
-        res = subprocess.run(['calibredb', 'add', '-d', file_path,
+        res = self._run_calibredb(['add', '-d', file_path,
             '--library-path', self._calibre_lib_dir], capture_output=True)
         for line in res.stdout.decode().split('\n'):
             m = re.match(RE_ADDED_BOOK_ID, line)
@@ -76,12 +81,12 @@ class CalibreDBW:
         return res.returncode, book_id
 
     def add_format(self, book_id, file_path):
-        return subprocess.run(['calibredb', 'add_format',
+        return self._run_calibredb(['add_format',
             '--library-path', self._calibre_lib_dir, str(book_id),
             file_path]).returncode
 
     def remove_format(self, book_id, book_format):
-        success = subprocess.run(['calibredb', 'remove_format',
+        success = self._run_calibredb(['remove_format',
             '--library-path', self._calibre_lib_dir, str(book_id),
             book_format]).returncode
         if success == 0 and len(self.get_book_formats(book_id)) < 1:
@@ -89,7 +94,7 @@ class CalibreDBW:
         return success
 
     def remove_book(self, book_id):
-        return subprocess.run(['calibredb', 'remove', '--permanent',
+        return self._run_calibredb(['remove', '--permanent',
             '--library-path', self._calibre_lib_dir, str(book_id)]).returncode
 
     def fetch_metadata(self, book_id, tmp_dir):
@@ -99,23 +104,19 @@ class CalibreDBW:
         ret = subprocess.run(command, stdout=tmp_file)
         if ret.returncode != 0:
             return False
-        command = ['calibredb', 'set_metadata', str(book_id), tmp_file.name, '--library-path', self._calibre_lib_dir]
-        ret = subprocess.run(command)
+        ret = self._run_calibredb(['set_metadata', str(book_id), tmp_file.name,
+            '--library-path', self._calibre_lib_dir])
         if ret.returncode != 0:
             return False
-        return subprocess.run(['calibredb',
-                                'embed_metadata',
-                                str(book_id)]).returncode == 0
-
+        return self._run_calibredb(['embed_metadata', str(book_id)]).returncode == 0
 
     def save_metadata(self, book_id, metadata):
-        command = ['calibredb', 'set_metadata',
-                '--library-path', self._calibre_lib_dir]
+        command = ['set_metadata', '--library-path', self._calibre_lib_dir]
         for field, value in metadata.items():
             command.append('-f')
             command.append('%s:%s' % (field, value))
         command.append(str(book_id))
-        return subprocess.run(command).returncode
+        return self._run_calibredb(command).returncode
 
     def list_tasks(self):
         return logdb.JobLogsDB(self._config).list_joblogs()
