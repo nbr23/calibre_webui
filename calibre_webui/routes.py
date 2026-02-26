@@ -255,25 +255,29 @@ def book_save(book_id):
 
     if len(metadata) == 0:
         flash_error('No changes saved')
-    elif app.calibredb_wrap.save_metadata(book_id, metadata) == 0:
-        flash_success('Metadata updated!')
     else:
-        flash_error('Error updating metadata')
+        try:
+            app.calibredb_wrap.save_metadata(book_id, metadata)
+            flash_success('Metadata updated!')
+        except Exception:
+            flash_error('Error updating metadata')
     return redirect(url_for("book_edit", book_id=book_id))
 
 @app.route('/books/<int:book_id>/formats/<book_format>/delete')
 def delete_book_format(book_id, book_format):
-    if app.calibredb_wrap.remove_format(book_id, book_format) == 0:
+    try:
+        app.calibredb_wrap.remove_format(book_id, book_format)
         flash_success('%s deleted!' % book_format)
-    else:
+    except Exception:
         flash_error('Could not delete %s' % book_format)
     return redirect(url_for("book_edit", book_id=book_id))
 
 @app.route('/books/<int:book_id>/delete')
 def delete_book(book_id):
-    if app.calibredb_wrap.remove_book(book_id) == 0:
+    try:
+        app.calibredb_wrap.remove_book(book_id)
         flash_success('Book #%i deleted successfully!' % book_id)
-    else:
+    except Exception:
         flash_error('Could not delete book #%i' % book_id)
     return redirect(url_for("index"))
 
@@ -288,9 +292,10 @@ def add_format(book_id):
             tmp_dir = app.config['CALIBRE_TEMP_DIR']
             tmp_file = os.path.join(tmp_dir,  secure_filename(format_file.filename))
             format_file.save(tmp_file)
-            if app.calibredb_wrap.add_format(book_id, tmp_file) == 0:
+            try:
+                app.calibredb_wrap.add_format(book_id, tmp_file)
                 flash_success('%s uploaded and added to library' % format_file.filename)
-            else:
+            except Exception:
                 flash_error('Could not add %s to library' % format_file.filename)
             os.remove(tmp_file)
         return redirect(url_for("book_edit", book_id=book_id))

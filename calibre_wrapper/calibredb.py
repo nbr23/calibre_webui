@@ -68,38 +68,41 @@ class CalibreDBW:
         self._init_tables_metadata()
         self.clear_tasks()
 
-    def _run_calibredb(self, args, **kwargs):
+    def _run_calibredb(self, args):
         with self._calibredb_lock:
             with open(self._calibredb_lockfile, 'w') as f:
                 fcntl.flock(f, fcntl.LOCK_EX)
-                return subprocess.run(['calibredb'] + args, **kwargs)
+                res = subprocess.run(['calibredb'] + args, capture_output=True)
+        if res.returncode != 0:
+            err = 'error running cmd %s: %s' % (args, res.stderr.decode())
+            print(err, flush=True)
+            raise RuntimeError(err)
+        return res
 
     def add_book(self, file_path):
-        book_id = -1
         res = self._run_calibredb(['add', '-d', file_path,
-            '--library-path', self._calibre_lib_dir], capture_output=True)
+            '--library-path', self._calibre_lib_dir])
         for line in res.stdout.decode().split('\n'):
             m = re.match(RE_ADDED_BOOK_ID, line)
             if m:
-                book_id = m.group(1)
-        return res.returncode, book_id
+                return m.group(1)
+        return -1
 
     def add_format(self, book_id, file_path):
-        return self._run_calibredb(['add_format',
+        self._run_calibredb(['add_format',
             '--library-path', self._calibre_lib_dir, str(book_id),
-            file_path]).returncode
+            file_path])
 
     def remove_format(self, book_id, book_format):
-        success = self._run_calibredb(['remove_format',
+        self._run_calibredb(['remove_format',
             '--library-path', self._calibre_lib_dir, str(book_id),
-            book_format]).returncode
-        if success == 0 and len(self.get_book_formats(book_id)) < 1:
-            return self.remove_book(book_id)
-        return success
+            book_format])
+        if len(self.get_book_formats(book_id)) < 1:
+            self.remove_book(book_id)
 
     def remove_book(self, book_id):
-        return self._run_calibredb(['remove', '--permanent',
-            '--library-path', self._calibre_lib_dir, str(book_id)]).returncode
+        self._run_calibredb(['remove', '--permanent',
+            '--library-path', self._calibre_lib_dir, str(book_id)])
 
     def fetch_metadata(self, book_id, tmp_dir):
         book, formats = self.get_book_details(book_id)
@@ -108,11 +111,13 @@ class CalibreDBW:
         ret = subprocess.run(command, stdout=tmp_file)
         if ret.returncode != 0:
             return False
-        ret = self._run_calibredb(['set_metadata', str(book_id), tmp_file.name,
-            '--library-path', self._calibre_lib_dir])
-        if ret.returncode != 0:
+        try:
+            self._run_calibredb(['set_metadata', str(book_id), tmp_file.name,
+                '--library-path', self._calibre_lib_dir])
+            self._run_calibredb(['embed_metadata', str(book_id)])
+        except Exception:
             return False
-        return self._run_calibredb(['embed_metadata', str(book_id)]).returncode == 0
+        return True
 
     def save_metadata(self, book_id, metadata):
         command = ['set_metadata', '--library-path', self._calibre_lib_dir]
@@ -120,7 +125,7 @@ class CalibreDBW:
             command.append('-f')
             command.append('%s:%s' % (field, value))
         command.append(str(book_id))
-        return self._run_calibredb(command).returncode
+        self._run_calibredb(command)
 
     def list_tasks(self):
         return logdb.JobLogsDB(self._config).list_joblogs()
@@ -144,14 +149,11 @@ class CalibreDBW:
         task_name = 'Upload book « %s »' % filename
         task_id = logdb.JobLogsDB(self._config).push_joblog(task_name, 'RUNNING')
         try:
-            rc, book_id = self.add_book(file_path)
-            if rc == 0:
-                logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
-                ext = filename.rsplit('.', 1)[-1].upper()
-                if ext in autoconvert_config:
-                    self.convert_book(book_id, ext, autoconvert_config[ext])
-            else:
-                logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
+            book_id = self.add_book(file_path)
+            logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
+            ext = filename.rsplit('.', 1)[-1].upper()
+            if ext in autoconvert_config:
+                self.convert_book(book_id, ext, autoconvert_config[ext])
         except Exception:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
         finally:
@@ -176,7 +178,7 @@ class CalibreDBW:
                 self.add_format(book_id, tmp_file)
             os.remove(tmp_file)
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
-        except subprocess.CalledProcessError:
+        except Exception:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
     def search_books(self, search, attribute, page=1, limit=21, book_format=None):
