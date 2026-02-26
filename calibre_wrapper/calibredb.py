@@ -17,6 +17,7 @@ RE_CALIBRE_VERSION = re.compile(r".*calibre ([0-9.]+).*")
 
 class group_concat(expression.FunctionElement):
     name = "group_concat"
+    inherit_cache = True
 
 
 def threaded(fn):
