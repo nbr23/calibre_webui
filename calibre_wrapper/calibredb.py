@@ -135,6 +135,25 @@ class CalibreDBW:
             }
 
     @threaded
+    def add_book_async(self, file_path, filename, autoconvert_config):
+        task_name = 'Upload book « %s »' % filename
+        task_id = logdb.JobLogsDB(self._config).push_joblog(task_name, 'RUNNING')
+        try:
+            rc, book_id = self.add_book(file_path)
+            if rc == 0:
+                logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
+                ext = filename.rsplit('.', 1)[-1].upper()
+                if ext in autoconvert_config:
+                    self.convert_book(book_id, ext, autoconvert_config[ext])
+            else:
+                logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
+        except Exception:
+            logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+    @threaded
     def convert_book(self, book_id, format_from, format_to):
         task_name = 'Convert book « %s » from %s to %s' \
                     % (self.get_book_title(book_id), format_from, format_to)
