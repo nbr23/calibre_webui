@@ -1,4 +1,5 @@
 import subprocess
+import fcntl
 from sqlalchemy import create_engine, Table, MetaData, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression, or_, func
@@ -63,12 +64,15 @@ class CalibreDBW:
         self._db_ng = create_engine('sqlite:///%s' % self._calibre_db)
         self._session = sessionmaker(self._db_ng)
         self._calibredb_lock = RLock()
+        self._calibredb_lockfile = os.path.join(self._calibre_lib_dir, '.calibrewebui.lock')
         self._init_tables_metadata()
         self.clear_tasks()
 
     def _run_calibredb(self, args, **kwargs):
         with self._calibredb_lock:
-            return subprocess.run(['calibredb'] + args, **kwargs)
+            with open(self._calibredb_lockfile, 'w') as f:
+                fcntl.flock(f, fcntl.LOCK_EX)
+                return subprocess.run(['calibredb'] + args, **kwargs)
 
     def add_book(self, file_path):
         book_id = -1
