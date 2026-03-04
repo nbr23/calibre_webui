@@ -30,7 +30,7 @@ pipeline {
         stage('Build and push Docker Image') {
             steps {
                 sh """
-                    docker buildx build --builder \$BUILDX_BUILDER --platform linux/arm64 -t nbr23/calibre_webui:latest -t nbr23/calibre_webui:\$(git rev-parse --short HEAD) ${env.GIT_BRANCH == 'master' ? '--push' : ''} .
+                    docker buildx build --builder \$BUILDX_BUILDER --platform linux/arm64,linux/amd64 -t nbr23/calibre_webui:latest -t nbr23/calibre_webui:\$(git rev-parse --short HEAD) ${env.GIT_BRANCH == 'master' ? '--push' : ''} .
                     """
             }
         }
