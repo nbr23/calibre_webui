@@ -18,6 +18,13 @@
   var trim_str = function (str, max = 50) { return str.length > max ? str.substring(0, max - 3) + '…' : str; }
   var page = 1;
 
+  var refresh_books_list = function () {
+    page = 1;
+    $("#load_more").show();
+    showSkeletons();
+    load_more_books();
+  };
+
   var getGridCols = function () {
     var grid = document.getElementById('books_list');
     var cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;

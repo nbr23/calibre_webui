@@ -571,13 +571,20 @@ code {
         $("#navbar-upload").submit();
       });
     });
+    var prev_running = 0;
     var fetch_task_count = function() {$.getJSON('{{url_for("get_tasks_count")}}', function (data) {
       if (data.COMPLETED != 0) {$("#tasks_completed").html(data.COMPLETED);}
       else{$("#tasks_completed").empty()}
       if (data.CANCELED != 0) {$("#tasks_canceled").html(data.CANCELED);}
       else{$("#tasks_canceled").empty()}
       if (data.RUNNING != 0) {$("#tasks_running").html(data.RUNNING);}
-      else{$("#tasks_running").empty()}
+      else {
+        $("#tasks_running").empty();
+        if (prev_running > 0 && typeof refresh_books_list === 'function') {
+          refresh_books_list();
+        }
+      }
+      prev_running = data.RUNNING;
       });
     };
     fetch_task_count();
