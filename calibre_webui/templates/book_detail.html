@@ -57,6 +57,12 @@
         <label class="col-form-label col-sm-2" for="book_pubdate">Publication</label>
         <input type="text" class="form-control col-sm-10" name="pubdate" id="book_pubdate" value="{{book.pubdate}}">
       </div>
+      {% if book.page_count %}
+      <div class="form-group row">
+        <label class="col-form-label col-sm-2">Pages</label>
+        <p class="col-form-label col-sm-10">{{ book.page_count }}</p>
+      </div>
+      {% endif %}
       <div class="form-group row">
         <label class="col-form-label col-sm-2" for="book_rating">Rating</label>
         <select id="book_rating" name="rating" class="form-control col-sm-10">

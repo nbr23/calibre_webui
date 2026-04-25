@@ -47,6 +47,11 @@ def get_tasks_list():
     tasks = app.calibredb_wrap.list_tasks()
     return jsonify(tasks)
 
+@app.route('/api/books/scan_pages', methods=['POST'])
+def scan_pages():
+    app.calibredb_wrap.scan_all_pages()
+    return jsonify({'queued': True})
+
 @app.route('/api/tasks/count')
 def get_tasks_count():
     return jsonify(app.calibredb_wrap.tasks_count())
@@ -191,6 +196,11 @@ def list_tasks():
     return render_template('tasklist.html', tasklist=tasks,
             title='Tasks list', calibre_version=CalibreDBW.get_calibre_version())
 
+@app.route('/settings')
+def settings():
+    return render_template('settings.html',
+            title='Settings', calibre_version=CalibreDBW.get_calibre_version())
+
 @app.route('/authors')
 def list_authors():
     return render_template('list.html',
@@ -212,6 +222,7 @@ def book_edit(book_id):
     book, formats = app.calibredb_wrap.get_book_details(book_id)
     if not book:
         return redirect(url_for("index"))
+    book['page_count'] = app.calibredb_wrap.get_page_count(book_id)
     book_formats = {'formats_sizes': formats,
             'formats_list': [i['format'] for i in formats]}
     return render_template('book_detail.html',

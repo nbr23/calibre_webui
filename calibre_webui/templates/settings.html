@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block page_title %}
+{{title}}
+{% endblock %}
+
+{% block body %}
+<div class="list-panel">
+  <div class="list-panel-header">
+    <h2>Library actions</h2>
+  </div>
+  <div class="panel-info">
+    Bulk operations that touch every book in the library. Progress shows up in <a href="{{ url_for('list_tasks') }}">Tasks</a>.
+  </div>
+  <div class="list-item">
+    <div class="device-meta">
+      <span class="device-name">Scan page counts</span>
+      <div class="device-detail">Reads each PDF and EPUB in the library and stores its page count in the <code>#pages</code> custom column. Skips books that already have a value.</div>
+    </div>
+    <div class="device-actions">
+      <button id="btn-scan-pages" class="btn-action btn-action-edit" type="button">Run scan</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script type="text/javascript">
+  $(function () {
+    $("#btn-scan-pages").on("click", function () {
+      var btn = $(this);
+      btn.prop("disabled", true).text("Queuing...");
+      $.ajax({
+        url: "{{ url_for('scan_pages') }}",
+        method: "POST"
+      }).done(function () {
+        btn.text("Queued");
+        setTimeout(function () { btn.prop("disabled", false).text("Run scan"); }, 4000);
+      }).fail(function () {
+        btn.prop("disabled", false).text("Run scan");
+        alert("Failed to queue scan");
+      });
+    });
+  });
+</script>
+{% endblock %}

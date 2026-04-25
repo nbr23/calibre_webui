@@ -11,6 +11,7 @@ import re
 import os
 import uuid
 from . import logdb
+from .page_count import extract_page_count
 
 RE_ADDED_BOOK_ID = re.compile(r"^Added book ids: ([0-9]+)$")
 RE_CALIBRE_VERSION = re.compile(r".*calibre ([0-9.]+).*")
@@ -66,8 +67,39 @@ class CalibreDBW:
         self._session = sessionmaker(self._db_ng)
         self._calibredb_lock = RLock()
         self._calibredb_lockfile = os.path.join(self._calibre_lib_dir, '.calibrewebui.lock')
+        self._scan_pages_lock = RLock()
+        self._scan_pages_running = False
+        self._pages_column_id = None
         self._init_tables_metadata()
+        self._ensure_pages_column()
         self.clear_tasks()
+
+    def _ensure_pages_column(self):
+        try:
+            cc_table = Table('custom_columns', MetaData(), autoload_with=self._db_ng)
+        except Exception as e:
+            print('custom_columns table unavailable: %s' % e, flush=True)
+            return
+        with self._session() as session:
+            stm = select(cc_table.c.id).where(cc_table.c.label == 'pages')
+            row = session.execute(stm).first()
+        if row is None:
+            try:
+                self._run_calibredb(['add_custom_column',
+                    '--library-path', self._calibre_lib_dir,
+                    'pages', 'Pages', 'int'])
+            except Exception as e:
+                print('failed to create #pages custom column: %s' % e, flush=True)
+                return
+            with self._session() as session:
+                stm = select(cc_table.c.id).where(cc_table.c.label == 'pages')
+                row = session.execute(stm).first()
+        if row is None:
+            return
+        self._pages_column_id = row.id
+        self._tables['pages_custom'] = Table(
+            'custom_column_%d' % self._pages_column_id,
+            MetaData(), autoload_with=self._db_ng)
 
     def _run_calibredb(self, args):
         with self._calibredb_lock:
@@ -153,6 +185,7 @@ class CalibreDBW:
             book_id = self.add_book(file_path)
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
             ext = filename.rsplit('.', 1)[-1].upper()
+            self._compute_and_store_pages(book_id, ext)
             if ext in autoconvert_config:
                 self.convert_book(book_id, ext, autoconvert_config[ext])
         except Exception:
@@ -160,6 +193,66 @@ class CalibreDBW:
         finally:
             if os.path.exists(file_path):
                 os.remove(file_path)
+
+    def _compute_and_store_pages(self, book_id, fmt):
+        try:
+            location = self.get_book_file(book_id, fmt)
+            if not location:
+                return
+            fpath, fname = location
+            count = extract_page_count(os.path.join(fpath, fname), fmt)
+            if count is not None:
+                self.set_page_count(book_id, count)
+        except Exception as e:
+            print('page-count compute failed for book %s: %s' % (book_id, e), flush=True)
+
+    @threaded
+    def scan_all_pages(self):
+        with self._scan_pages_lock:
+            if self._scan_pages_running:
+                return
+            self._scan_pages_running = True
+        log = logdb.JobLogsDB(self._config)
+        task_name = 'Scanning page counts'
+        task_id = log.push_joblog(task_name, 'RUNNING')
+        try:
+            book_ids = self.list_all_book_ids()
+            targets = [b for b in book_ids if self.get_page_count(b) is None]
+            total = len(targets)
+            done = 0
+            written = 0
+            for book_id in targets:
+                fmt = self._pick_pageable_format(book_id)
+                if fmt:
+                    location = self.get_book_file(book_id, fmt)
+                    if location:
+                        fpath, fname = location
+                        count = extract_page_count(os.path.join(fpath, fname), fmt)
+                        if count is not None:
+                            try:
+                                self.set_page_count(book_id, count)
+                                written += 1
+                            except Exception as e:
+                                print('set_page_count failed for %s: %s' % (book_id, e), flush=True)
+                done += 1
+                if done % 10 == 0 or done == total:
+                    log.update_joblog(task_id,
+                        '%s: %d/%d' % (task_name, done, total), 'RUNNING')
+            log.update_joblog(task_id,
+                'Scanned page counts: wrote %d of %d' % (written, total), 'COMPLETED')
+        except Exception as e:
+            print('scan_all_pages failed: %s' % e, flush=True)
+            log.update_joblog(task_id, '%s (failed)' % task_name, 'CANCELED')
+        finally:
+            with self._scan_pages_lock:
+                self._scan_pages_running = False
+
+    def _pick_pageable_format(self, book_id):
+        formats = {f['format'].upper() for f in self.get_book_formats(book_id)}
+        for candidate in ('PDF', 'EPUB'):
+            if candidate in formats:
+                return candidate
+        return None
 
     @threaded
     def convert_book(self, book_id, format_from, format_to):
@@ -466,3 +559,24 @@ class CalibreDBW:
             row = session.execute(stm).first()
             if row:
                 return os.path.join(self._calibre_lib_dir, row.path), '%s.%s' % (row.name, book_format.lower())
+
+    def list_all_book_ids(self):
+        with self._session() as session:
+            stm = select(self._tables['books'].c.id)
+            return [row.id for row in session.execute(stm).fetchall()]
+
+    def get_page_count(self, book_id):
+        if not self._pages_column_id or 'pages_custom' not in self._tables:
+            return None
+        with self._session() as session:
+            t = self._tables['pages_custom']
+            stm = select(t.c.value).where(t.c.book == book_id)
+            row = session.execute(stm).first()
+            return row.value if row else None
+
+    def set_page_count(self, book_id, count):
+        if not self._pages_column_id:
+            return
+        self._run_calibredb(['set_custom',
+            '--library-path', self._calibre_lib_dir,
+            'pages', str(book_id), str(int(count))])

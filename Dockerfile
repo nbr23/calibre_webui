@@ -37,7 +37,7 @@ ENV TZ=Etc/UTC
 ENV PATH="/opt/python-env/bin:$PATH"
 
 RUN apt update \
-  && apt -y --no-install-recommends install python3 tzdata calibre locales \
+  && apt -y --no-install-recommends install python3 tzdata calibre locales poppler-utils \
   && apt clean \
   && rm -rf /var/lib/apt/lists/* \
   && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen en_US.UTF-8 \
