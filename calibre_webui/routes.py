@@ -222,7 +222,7 @@ def book_edit(book_id):
     book, formats = app.calibredb_wrap.get_book_details(book_id)
     if not book:
         return redirect(url_for("index"))
-    book['page_count'] = app.calibredb_wrap.get_page_count(book_id)
+    book['page_count'] = app.calibredb_wrap.ensure_page_count(book_id)
     book_formats = {'formats_sizes': formats,
             'formats_list': [i['format'] for i in formats]}
     return render_template('book_detail.html',

@@ -185,7 +185,10 @@ class CalibreDBW:
             book_id = self.add_book(file_path)
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'COMPLETED')
             ext = filename.rsplit('.', 1)[-1].upper()
-            self._compute_and_store_pages(book_id, ext)
+            try:
+                self.ensure_page_count(book_id, ext)
+            except Exception as e:
+                print('ensure_page_count failed for book %s: %s' % (book_id, e), flush=True)
             if ext in autoconvert_config:
                 self.convert_book(book_id, ext, autoconvert_config[ext])
         except Exception:
@@ -194,17 +197,21 @@ class CalibreDBW:
             if os.path.exists(file_path):
                 os.remove(file_path)
 
-    def _compute_and_store_pages(self, book_id, fmt):
-        try:
+    def ensure_page_count(self, book_id, fmt_hint=None):
+        current = self.get_page_count(book_id)
+        if current is not None:
+            return current if current > 0 else None
+        fmt = fmt_hint.upper() if fmt_hint else None
+        if fmt not in ('PDF', 'EPUB'):
+            fmt = self._pick_pageable_format(book_id)
+        count = None
+        if fmt:
             location = self.get_book_file(book_id, fmt)
-            if not location:
-                return
-            fpath, fname = location
-            count = extract_page_count(os.path.join(fpath, fname), fmt)
-            if count is not None:
-                self.set_page_count(book_id, count)
-        except Exception as e:
-            print('page-count compute failed for book %s: %s' % (book_id, e), flush=True)
+            if location:
+                fpath, fname = location
+                count = extract_page_count(os.path.join(fpath, fname), fmt)
+        self.set_page_count(book_id, count if count else 0)
+        return count
 
     @threaded
     def scan_all_pages(self):
@@ -222,18 +229,11 @@ class CalibreDBW:
             done = 0
             written = 0
             for book_id in targets:
-                fmt = self._pick_pageable_format(book_id)
-                if fmt:
-                    location = self.get_book_file(book_id, fmt)
-                    if location:
-                        fpath, fname = location
-                        count = extract_page_count(os.path.join(fpath, fname), fmt)
-                        if count is not None:
-                            try:
-                                self.set_page_count(book_id, count)
-                                written += 1
-                            except Exception as e:
-                                print('set_page_count failed for %s: %s' % (book_id, e), flush=True)
+                try:
+                    if self.ensure_page_count(book_id):
+                        written += 1
+                except Exception as e:
+                    print('ensure_page_count failed for %s: %s' % (book_id, e), flush=True)
                 done += 1
                 if done % 10 == 0 or done == total:
                     log.update_joblog(task_id,
