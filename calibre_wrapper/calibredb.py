@@ -197,10 +197,11 @@ class CalibreDBW:
             if os.path.exists(file_path):
                 os.remove(file_path)
 
-    def ensure_page_count(self, book_id, fmt_hint=None):
-        current = self.get_page_count(book_id)
-        if current is not None:
-            return current if current > 0 else None
+    def ensure_page_count(self, book_id, fmt_hint=None, force=False):
+        if not force:
+            current = self.get_page_count(book_id)
+            if current is not None:
+                return current if current > 0 else None
         fmt = fmt_hint.upper() if fmt_hint else None
         if fmt not in ('PDF', 'EPUB'):
             fmt = self._pick_pageable_format(book_id)
@@ -223,14 +224,13 @@ class CalibreDBW:
         task_name = 'Scanning page counts'
         task_id = log.push_joblog(task_name, 'RUNNING')
         try:
-            book_ids = self.list_all_book_ids()
-            targets = [b for b in book_ids if self.get_page_count(b) is None]
+            targets = sorted(self.list_all_book_ids())
             total = len(targets)
             done = 0
             written = 0
             for book_id in targets:
                 try:
-                    if self.ensure_page_count(book_id):
+                    if self.ensure_page_count(book_id, force=True):
                         written += 1
                 except Exception as e:
                     print('ensure_page_count failed for %s: %s' % (book_id, e), flush=True)
