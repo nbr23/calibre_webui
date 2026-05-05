@@ -369,6 +369,8 @@ def get_thumb(book_id):
 
     if not os.path.exists(thumb_path):
         cover_path = os.path.join(book_dir, 'cover.jpg')
+        if not os.path.exists(cover_path):
+            return redirect('/static/img/default_cover.jpg')
         try:
             img = Image.open(cover_path)
             ratio = THUMB_HEIGHT / img.height
