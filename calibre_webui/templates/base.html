@@ -545,6 +545,11 @@ code {
               <option {% if scope|lower == "tags" %}selected{% endif %}>Tags</option>
               <option {% if scope|lower == "series" %}selected{% endif %}>Series</option>
             </select>
+            <select name="read_status" aria-label="Filter by read status" onchange="this.form.submit()">
+              <option value="all" {% if not read_status %}selected{% endif %}>All</option>
+              <option value="read" {% if read_status == "read" %}selected{% endif %}>Read</option>
+              <option value="unread" {% if read_status == "unread" %}selected{% endif %}>Unread</option>
+            </select>
             <button type="submit">Search</button>
           </div>
         </form>

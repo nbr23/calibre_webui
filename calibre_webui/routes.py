@@ -29,11 +29,14 @@ def get_books():
             if 'search' in request.args else None
     scope = request.args.get('search_scope').strip() \
             if 'search_scope' in request.args else None
+    read_status = request.args.get('read_status', '').strip().lower() or None
+    if read_status not in ('read', 'unread'):
+        read_status = None
     limit = request.args.get('limit', 21, type=int)
     limit = max(12, min(limit, 120))
     books = app.calibredb_wrap.search_books(search.lower() if search else None,
             scope.lower() if scope else None,
-            page=page, limit=limit)
+            page=page, limit=limit, read_status=read_status)
     if not books:
         return jsonify([])
     return jsonify([dict(book) for book in books])
@@ -101,8 +104,12 @@ def index():
             if 'search' in request.args else None
     scope = request.args.get('search_scope').strip() \
             if 'search_scope' in request.args else None
+    read_status = request.args.get('read_status', '').strip().lower() or None
+    if read_status not in ('read', 'unread'):
+        read_status = None
     return render_template('index.html', search=search,
-            scope=scope, title='My Books', calibre_version=CalibreDBW.get_calibre_version())
+            scope=scope, read_status=read_status, title='My Books',
+            calibre_version=CalibreDBW.get_calibre_version())
 
 # Device Management
 @app.route('/devices/list')

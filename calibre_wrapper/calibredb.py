@@ -275,7 +275,7 @@ class CalibreDBW:
         except Exception:
             logdb.JobLogsDB(self._config).update_joblog(task_id, task_name, 'CANCELED')
 
-    def search_books(self, search, attribute, page=1, limit=21, book_format=None):
+    def search_books(self, search, attribute, page=1, limit=21, book_format=None, read_status=None):
         with self._session() as session:
             formats = select(func.group_concat(self._tables['Data'].c.format, ','))\
                 .where(self._tables['Data'].c.book == self._tables['books'].c.id)\
@@ -376,6 +376,18 @@ class CalibreDBW:
                         )
                     )
 
+            if read_status in ('read', 'unread'):
+                read_match = or_(
+                    tags == 'read',
+                    tags.like('read,%'),
+                    tags.like('%, read,%'),
+                    tags.like('%, read'),
+                )
+                if read_status == 'read':
+                    query = query.where(read_match)
+                else:
+                    query = query.where(or_(tags.is_(None), ~read_match))
+
             if attribute == 'series':
                 query = query.order_by(self._tables['books'].c.series_index)
             else:
@@ -386,7 +398,7 @@ class CalibreDBW:
             result = self.resultproxy_to_dict(session.execute(query).all())
             result = [dict(book, **{
                 'read': len([tag for tag in (book.get('tags') or '').split(',')
-                            if tag.strip() == 'read']) > 0
+                            if tag.strip().lower() == 'read']) > 0
             }) for book in result]
             return result
 

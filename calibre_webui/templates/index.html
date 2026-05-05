@@ -52,7 +52,7 @@
     var limit = getLimit();
     $.getJSON('{{url_for("get_books")}}?page='
       + page + '&limit=' + limit {% if search %} + '&search={{ search }}'{% endif %}{% if scope %}
-  +'&search_scope={{ scope }}'{% endif %}, function (data) {
+  +'&search_scope={{ scope }}'{% endif %}{% if read_status %} + '&read_status={{ read_status }}'{% endif %}, function (data) {
     if (data.length == 0) {
       $("#load_more").hide();
       if (page == 1) {
