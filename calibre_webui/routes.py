@@ -351,9 +351,9 @@ def convert_book(book_id):
 def get_cover(book_id):
     book = app.calibredb_wrap.get_book_cover_info(book_id)
     if book and book.has_cover:
-        return send_from_directory(os.path.join(
-            app.config['CALIBRE_LIBRARY_PATH'], book.path),
-            'cover.jpg')
+        book_dir = os.path.join(app.config['CALIBRE_LIBRARY_PATH'], book.path)
+        if os.path.exists(os.path.join(book_dir, 'cover.jpg')):
+            return send_from_directory(book_dir, 'cover.jpg')
     return redirect('/static/img/default_cover.jpg')
 
 THUMB_HEIGHT = 400
