@@ -1,6 +1,7 @@
 import subprocess
 import fcntl
-from sqlalchemy import create_engine, Table, MetaData, and_
+import unicodedata
+from sqlalchemy import create_engine, Table, MetaData, and_, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select, expression, or_, func
 from sqlalchemy.ext.compiler import compiles
@@ -15,6 +16,13 @@ from .page_count import extract_page_count
 
 RE_ADDED_BOOK_ID = re.compile(r"^Added book ids: ([0-9]+)$")
 RE_CALIBRE_VERSION = re.compile(r".*calibre ([0-9.]+).*")
+
+
+def strip_accents(s):
+    if s is None:
+        return None
+    return ''.join(c for c in unicodedata.normalize('NFKD', s)
+                   if not unicodedata.combining(c))
 
 class group_concat(expression.FunctionElement):
     name = "group_concat"
@@ -64,6 +72,11 @@ class CalibreDBW:
         self._calibre_lib_dir = self._config['CALIBRE_LIBRARY_PATH']
         self._calibre_db = os.path.join(self._calibre_lib_dir, 'metadata.db')
         self._db_ng = create_engine('sqlite:///%s' % self._calibre_db)
+
+        @event.listens_for(self._db_ng, 'connect')
+        def _register_udfs(dbapi_conn, _):
+            dbapi_conn.create_function('unaccent', 1, strip_accents, deterministic=True)
+
         self._session = sessionmaker(self._db_ng)
         self._calibredb_lock = RLock()
         self._calibredb_lockfile = os.path.join(self._calibre_lib_dir, '.calibrewebui.lock')
@@ -327,12 +340,13 @@ class CalibreDBW:
             query = query.group_by(*group_by_columns)
 
             if search:
+                norm_search = strip_accents(search)
                 if attribute and attribute in ['authors', 'series', 'tags']:
                     match attribute:
                         case 'authors':
-                            query = query.where(author.ilike(f'%{search}%'))
+                            query = query.where(func.unaccent(author).ilike(f'%{norm_search}%'))
                         case 'series':
-                            query = query.where(series.ilike(f'%{search}%'))
+                            query = query.where(func.unaccent(series).ilike(f'%{norm_search}%'))
                         case 'tags':
                             search_tags = search.split(',')
                             include_tags = [tag for tag in search_tags if not tag.startswith('-')]
@@ -368,8 +382,8 @@ class CalibreDBW:
                 else:
                     query = query.where(
                         or_(
-                            self._tables['books'].c.title.ilike(f'%{search}%'),
-                            author.ilike(f'%{search}%')
+                            func.unaccent(self._tables['books'].c.title).ilike(f'%{norm_search}%'),
+                            func.unaccent(author).ilike(f'%{norm_search}%')
                         )
                     )
 
