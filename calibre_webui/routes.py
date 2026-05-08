@@ -6,6 +6,7 @@ from PIL import Image
 import os
 
 from calibre_webui import app
+from calibre_webui.cover_placeholder import cover_placeholder_response
 from calibre_wrapper.calibredb import CalibreDBW
 
 def flash_error(message):
@@ -354,7 +355,9 @@ def get_cover(book_id):
         book_dir = os.path.join(app.config['CALIBRE_LIBRARY_PATH'], book.path)
         if os.path.exists(os.path.join(book_dir, 'cover.jpg')):
             return send_from_directory(book_dir, 'cover.jpg')
-    return redirect('/static/img/default_cover.jpg')
+    return cover_placeholder_response(book_id,
+                                      title=getattr(book, 'title', None) if book else None,
+                                      authors=getattr(book, 'authors', None) if book else None)
 
 THUMB_HEIGHT = 400
 
@@ -362,7 +365,9 @@ THUMB_HEIGHT = 400
 def get_thumb(book_id):
     book = app.calibredb_wrap.get_book_cover_info(book_id)
     if not book or not book.has_cover:
-        return redirect('/static/img/default_cover.jpg')
+        return cover_placeholder_response(book_id,
+                                          title=getattr(book, 'title', None) if book else None,
+                                          authors=getattr(book, 'authors', None) if book else None)
 
     book_dir = os.path.join(app.config['CALIBRE_LIBRARY_PATH'], book.path)
     thumb_path = os.path.join(book_dir, 'thumb.jpg')
@@ -370,7 +375,7 @@ def get_thumb(book_id):
     if not os.path.exists(thumb_path):
         cover_path = os.path.join(book_dir, 'cover.jpg')
         if not os.path.exists(cover_path):
-            return redirect('/static/img/default_cover.jpg')
+            return cover_placeholder_response(book_id, title=book.title, authors=book.authors)
         try:
             img = Image.open(cover_path)
             ratio = THUMB_HEIGHT / img.height

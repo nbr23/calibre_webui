@@ -462,7 +462,15 @@ class CalibreDBW:
 
     def get_book_cover_info(self, book_id):
         with self._session() as session:
-            stm = select(self._tables['books'].c.has_cover, self._tables['books'].c.path)\
+            authors = select(group_concat(self._tables['authors'].c.name, ';'))\
+                    .select_from(self._tables['authors'].join(self._tables['books_authors_link'],
+                        self._tables['books_authors_link'].c.author == self._tables['authors'].c.id))\
+                    .where(self._tables['books_authors_link'].c.book == self._tables['books'].c.id)\
+                    .label('authors')
+            stm = select(self._tables['books'].c.has_cover,
+                         self._tables['books'].c.path,
+                         self._tables['books'].c.title,
+                         authors)\
                     .where(self._tables['books'].c.id == book_id)
             return session.execute(stm).first()
 
