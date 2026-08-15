@@ -561,6 +561,10 @@ class CalibreDBW:
         if book:
             book['authors'] = ' & '.join(book['authors'].split(';')) if book['authors'] else ''
             book['series'] = ' & '.join(book['series'].split(';')) if book['series'] else ''
+            # calibredb refuses to set series_index on a book without a series,
+            # so a leftover index must not be shown or compared against
+            if not book['series']:
+                book['series_index'] = 1.0
             book['rating'] = int(book['rating'] / 2) if book['rating'] else book['rating']
             book['read'] = any(t.strip() == 'read' for t in (book['tags'] or '').split(','))
             formats = self.get_book_formats(book_id)

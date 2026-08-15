@@ -21,6 +21,12 @@ def flash_debug(message):
 def flash_success(message):
     return flash(message, app.FLASH['success'])
 
+def parse_series_index(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 1.0
+
 # API Endpoints
 
 @app.route('/api/books/list')
@@ -249,10 +255,16 @@ def book_save(book_id):
     metadata = {}
     book, formats = app.calibredb_wrap.get_book_details(book_id)
     for field in ['title', 'authors', 'publisher', 'comments',
-            'languages', 'pubdate', 'series', 'series_index']:
+            'languages', 'pubdate', 'series']:
         if field in request.form and \
                 request.form.get(field) != book[field]:
             metadata[field] = request.form.get(field)
+
+    series = metadata.get('series', book['series'])
+    if series and 'series_index' in request.form:
+        series_index = parse_series_index(request.form.get('series_index'))
+        if series_index != book['series_index'] or 'series' in metadata:
+            metadata['series_index'] = series_index
 
     tags = [tag for tag in request.form.get('tags', '').split(',') if tag != '']
     if request.form.get('read') == 'on':
