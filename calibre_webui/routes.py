@@ -41,13 +41,22 @@ def display_title(title, series, series_index):
         return title
     return '%s (#%s)' % (title, format_series_index(series_index))
 
-RE_FILENAME_INVALID = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
+# a ';' is legal inside a Content-Disposition quoted-string, but readers that
+# split the header on ';' before parsing parameters then see a filename with no
+# extension and reject the download as an unsupported format
+RE_FILENAME_INVALID = re.compile(r'[\\/:*?"<>|;\x00-\x1f]')
 FILENAME_STEM_MAX_BYTES = 200
 
 def sanitize_filename_component(name):
     cleaned = RE_FILENAME_INVALID.sub('_', name or '')
     encoded = cleaned.encode('utf-8')[:FILENAME_STEM_MAX_BYTES]
     return encoded.decode('utf-8', 'ignore').strip().strip('.').strip()
+
+def safe_download_name(stem, ext, fallback):
+    cleaned = sanitize_filename_component(stem)
+    if not cleaned:
+        return fallback
+    return '%s.%s' % (cleaned, ext) if ext else cleaned
 
 def retitle_enabled():
     value = app.config['RETITLE_DOWNLOADS']
@@ -461,18 +470,20 @@ def download_book_file(book_id, book_format):
     if not location:
         abort(404)
     fpath, fname = location
+    stem, sep, ext = fname.rpartition('.')
+    if not sep:
+        stem, ext = fname, ''
 
     info = app.calibredb_wrap.get_book_title_info(book_id) \
             if retitle_enabled() else None
     if not info or not info.series:
         return send_from_directory(fpath, fname, conditional=True,
-                download_name=fname, as_attachment=True)
+                download_name=safe_download_name(stem, ext, fname),
+                as_attachment=True)
 
     title = display_title(info.title, info.series, info.series_index)
-    ext = fname.rsplit('.', 1)[-1]
-    stem = sanitize_filename_component('%s - %s' % (title, info.authors)
-            if info.authors else title)
-    download_name = '%s.%s' % (stem, ext) if stem else fname
+    download_name = safe_download_name('%s - %s' % (title, info.authors)
+            if info.authors else title, ext, fname)
 
     if book_format not in retitle_formats():
         return send_from_directory(fpath, fname, conditional=True,
