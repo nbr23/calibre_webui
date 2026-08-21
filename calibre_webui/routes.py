@@ -1,9 +1,14 @@
-from flask import render_template, request, send_from_directory, \
-        jsonify, redirect, url_for, flash
+from flask import render_template, request, send_from_directory, send_file, \
+        jsonify, redirect, url_for, flash, abort
 from werkzeug.utils import secure_filename
 from urllib.parse import urljoin
 from PIL import Image
+import hashlib
 import os
+import re
+import shutil
+import time
+import uuid
 
 from calibre_webui import app
 from calibre_webui.cover_placeholder import cover_placeholder_response
@@ -26,6 +31,57 @@ def parse_series_index(value):
         return float(value)
     except (TypeError, ValueError):
         return 1.0
+
+def format_series_index(value):
+    index = parse_series_index(value)
+    return '%d' % index if index == int(index) else ('%s' % index)
+
+def display_title(title, series, series_index):
+    if not series:
+        return title
+    return '%s (#%s)' % (title, format_series_index(series_index))
+
+RE_FILENAME_INVALID = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
+FILENAME_STEM_MAX_BYTES = 200
+
+def sanitize_filename_component(name):
+    cleaned = RE_FILENAME_INVALID.sub('_', name or '')
+    encoded = cleaned.encode('utf-8')[:FILENAME_STEM_MAX_BYTES]
+    return encoded.decode('utf-8', 'ignore').strip().strip('.').strip()
+
+def retitle_enabled():
+    value = app.config['RETITLE_DOWNLOADS']
+    if isinstance(value, str):
+        return value.strip().lower() in ('1', 'true', 'yes', 'on')
+    return bool(value)
+
+def retitle_formats():
+    value = app.config['RETITLE_FORMATS']
+    if isinstance(value, str):
+        value = value.split(',')
+    return {fmt.strip().upper() for fmt in value if fmt.strip()}
+
+RETITLE_TEMP_PREFIX = 'retitle_'
+RETITLE_TEMP_MAX_AGE = 3600
+
+def retitled_etag(source_stat, title):
+    seed = '%s-%s-%s' % (source_stat.st_mtime, source_stat.st_size, title)
+    return hashlib.sha1(seed.encode('utf-8')).hexdigest()
+
+def prune_retitled_temps(tmp_dir):
+    cutoff = time.time() - RETITLE_TEMP_MAX_AGE
+    try:
+        entries = list(os.scandir(tmp_dir))
+    except OSError:
+        return
+    for entry in entries:
+        if not entry.name.startswith(RETITLE_TEMP_PREFIX):
+            continue
+        try:
+            if entry.stat().st_mtime < cutoff:
+                os.remove(entry.path)
+        except OSError:
+            pass
 
 # API Endpoints
 
@@ -400,8 +456,56 @@ def get_thumb(book_id):
 
 @app.route('/books/<int:book_id>/file/<book_format>/')
 def download_book_file(book_id, book_format):
-    fpath, fname = app.calibredb_wrap.get_book_file(book_id,
-            book_format.upper())
-    return send_from_directory(fpath, fname, conditional=True, download_name=fname, as_attachment=True)
+    book_format = book_format.upper()
+    location = app.calibredb_wrap.get_book_file(book_id, book_format)
+    if not location:
+        abort(404)
+    fpath, fname = location
+
+    info = app.calibredb_wrap.get_book_title_info(book_id) \
+            if retitle_enabled() else None
+    if not info or not info.series:
+        return send_from_directory(fpath, fname, conditional=True,
+                download_name=fname, as_attachment=True)
+
+    title = display_title(info.title, info.series, info.series_index)
+    ext = fname.rsplit('.', 1)[-1]
+    stem = sanitize_filename_component('%s - %s' % (title, info.authors)
+            if info.authors else title)
+    download_name = '%s.%s' % (stem, ext) if stem else fname
+
+    if book_format not in retitle_formats():
+        return send_from_directory(fpath, fname, conditional=True,
+                download_name=download_name, as_attachment=True)
+
+    source = os.path.join(fpath, fname)
+    tmp_dir = app.config['CALIBRE_TEMP_DIR']
+    prune_retitled_temps(tmp_dir)
+    tmp_file = os.path.join(tmp_dir, '%s%s_%i.%s' % (RETITLE_TEMP_PREFIX,
+        book_id, uuid.uuid4().fields[1], ext.lower()))
+    try:
+        shutil.copyfile(source, tmp_file)
+        app.calibredb_wrap.write_format_title(tmp_file, title)
+    except Exception as e:
+        print('could not retitle book %s (%s): %s' % (book_id, book_format, e),
+                flush=True)
+        if os.path.exists(tmp_file):
+            os.remove(tmp_file)
+        return send_from_directory(fpath, fname, conditional=True,
+                download_name=download_name, as_attachment=True)
+
+    # the rewrite is deterministic, so deriving validators from the source file
+    # keeps them stable across requests and lets an interrupted download resume;
+    # werkzeug would otherwise stat the throwaway copy and change them every time
+    source_stat = os.stat(source)
+    response = send_file(tmp_file, conditional=True, as_attachment=True,
+            download_name=download_name,
+            last_modified=source_stat.st_mtime,
+            etag=retitled_etag(source_stat, title))
+    # send_file sets direct_passthrough, which makes werkzeug skip the response
+    # close callbacks entirely; unlinking the already-open file is the only
+    # cleanup that survives an aborted download (POSIX keeps the fd valid)
+    os.remove(tmp_file)
+    return response
 
 

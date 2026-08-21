@@ -585,6 +585,32 @@ class CalibreDBW:
             stm = select(self._tables['books'].c.title).where(self._tables['books'].c.id == book_id)
             return session.execute(stm).first().title
 
+    def get_book_title_info(self, book_id):
+        with self._session() as session:
+            authors = select(group_concat(self._tables['authors'].c.name, ' & '))\
+                    .select_from(self._tables['authors'].join(self._tables['books_authors_link'],
+                        self._tables['books_authors_link'].c.author == self._tables['authors'].c.id))\
+                    .where(self._tables['books_authors_link'].c.book == self._tables['books'].c.id)\
+                    .label('authors')
+            series = select(self._tables['series'].c.name)\
+                    .select_from(self._tables['series'].join(self._tables['books_series_link'],
+                        self._tables['books_series_link'].c.series == self._tables['series'].c.id))\
+                    .where(self._tables['books_series_link'].c.book == self._tables['books'].c.id)\
+                    .label('series')
+            stm = select(self._tables['books'].c.title,
+                         self._tables['books'].c.series_index,
+                         series, authors)\
+                    .where(self._tables['books'].c.id == book_id)
+            return session.execute(stm).first()
+
+    def write_format_title(self, file_path, title):
+        res = subprocess.run(['ebook-meta', file_path, '--title', title],
+                capture_output=True)
+        if res.returncode != 0:
+            err = 'error retitling %s: %s' % (file_path, res.stderr.decode())
+            print(err, flush=True)
+            raise RuntimeError(err)
+
     def get_book_file(self, book_id, book_format):
         with self._session() as session:
             stm = select(self._tables['Data'].c.name, self._tables['books'].c.path)\

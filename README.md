@@ -60,6 +60,23 @@ It is required to set at least the following variables:
   directory *must* contain the metadata.db file
 - `APP_SECRET_KEY`: to a random string
 
+### Series index in downloaded book titles
+
+Reading devices such as the Kindle display the title embedded in the book file
+rather than the one held in the Calibre library, which makes books belonging to
+a series hard to tell apart. When a book has a series, calibre_webui appends its
+index to the title of the downloaded copy: `Slow Horses` is served as `Slow
+Horses (#1)`, both in the file's metadata and in its filename.
+
+The library is never modified. The rewrite is applied to a temporary copy for
+the duration of the download, and books without a series are served untouched.
+
+- `RETITLE_DOWNLOADS`: enabled by default, set to `False` to serve books
+  unmodified
+- `RETITLE_FORMATS`: formats whose embedded metadata is rewritten, using
+  Calibre's `ebook-meta`. Formats left out of this list are still served with the
+  decorated filename, which is what most readers fall back on for PDF and CBZ
+
 Docker
 ------
 

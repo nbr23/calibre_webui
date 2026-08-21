@@ -22,6 +22,11 @@ AUTOCONVERT = {
         'EPUB': 'MOBI' # Automatically convert EPUB to MOBI upon upload
 }
 
+RETITLE_DOWNLOADS = True
+
+RETITLE_FORMATS = ['MOBI', 'AZW', 'AZW3', 'PRC', 'EPUB', 'PDF', 'FB2', 'LRF',
+        'HTMLZ', 'RTF']
+
 # Directory to temporarily store uploaded or converted files
 CALIBRE_TEMP_DIR = '/data/tmp'
 
