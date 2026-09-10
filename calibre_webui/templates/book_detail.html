@@ -77,7 +77,7 @@
         <input type="checkbox" class="form-control col-sm-2" name="read" id="book_read" {% if book.read %}checked{% endif %}>
       </div>
       <div class="text-center">
-        <button id="book-save" type="submit" class="btn btn-primary" disabled>Save</button>
+        <button id="book-save" type="submit" class="btn btn-primary" hidden disabled>Save</button>
       </div>
     </form>
   </div>
@@ -141,7 +141,7 @@
 
     function updateSaveState() {
       var hasChanges = metadataForm.serialize() !== initialValues;
-      saveButton.prop("disabled", !hasChanges);
+      saveButton.prop("hidden", !hasChanges).prop("disabled", !hasChanges);
       return hasChanges;
     }
 
